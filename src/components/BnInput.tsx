@@ -61,7 +61,7 @@ export const BnInput: React.FC<BnInputProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       <div
-        className={`relative flex flex-col justify-center rounded-2xl bg-[#f1f5f9] border border-slate-200/90 focus-within:bg-white focus-within:border-[#123e6d] focus-within:ring-2 focus-within:ring-[#123e6d]/15 transition-all ${
+        className={`bn-input-box relative flex flex-col justify-center rounded-2xl bg-[#f1f5f9] border border-slate-200/90 focus-within:bg-white focus-within:border-[#123e6d] focus-within:ring-2 focus-within:ring-[#123e6d]/15 transition-all ${
           compact ? 'px-2.5 py-1.5' : 'px-3.5 py-2'
         }`}
       >

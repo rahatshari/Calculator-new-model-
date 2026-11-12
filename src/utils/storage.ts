@@ -1,5 +1,6 @@
-import { getBnDateTime } from './bengali';
+import { getBnDateTime, toBnNum } from './bengali';
 import { TimberItem } from './calculators';
+import { APP_VERSION, GITHUB_REPO } from '../version';
 
 export type CalculatorCategory = 'land' | 'nol' | 'soil' | 'timber';
 
@@ -69,6 +70,8 @@ export interface AppSettings {
   autoUpdateCheck?: boolean;
   lastCheckedAt: string;
   fontFamily: BengaliFontId;
+  amoledDark?: boolean;
+  githubRepo?: string;
 }
 
 const HISTORY_STORAGE_KEY = 'hisab_calculator_history_v1';
@@ -129,20 +132,23 @@ export function clearAllHistory(): HistoryRecord[] {
 }
 
 export function loadSettings(): AppSettings {
+  const currentBnVer = `v${toBnNum(APP_VERSION)}`;
   try {
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) {
       return {
-        version: 'v১.০.০',
+        version: currentBnVer,
         autoUpdate: true,
         autoUpdateCheck: true,
         lastCheckedAt: getBnDateTime(new Date()),
         fontFamily: 'anek',
+        amoledDark: false,
+        githubRepo: GITHUB_REPO,
       };
     }
     const parsed = JSON.parse(raw);
     return {
-      version: parsed.version || 'v১.০.০',
+      version: currentBnVer,
       autoUpdate: parsed.autoUpdate ?? parsed.autoUpdateCheck ?? true,
       autoUpdateCheck: parsed.autoUpdate ?? parsed.autoUpdateCheck ?? true,
       lastCheckedAt: parsed.lastCheckedAt || getBnDateTime(new Date()),
@@ -150,14 +156,18 @@ export function loadSettings(): AppSettings {
         parsed.fontFamily && BENGALI_FONTS[parsed.fontFamily as BengaliFontId]
           ? (parsed.fontFamily as BengaliFontId)
           : 'anek',
+      amoledDark: Boolean(parsed.amoledDark),
+      githubRepo: parsed.githubRepo || GITHUB_REPO,
     };
   } catch {
     return {
-      version: 'v১.০.০',
+      version: currentBnVer,
       autoUpdate: true,
       autoUpdateCheck: true,
       lastCheckedAt: getBnDateTime(new Date()),
       fontFamily: 'anek',
+      amoledDark: false,
+      githubRepo: GITHUB_REPO,
     };
   }
 }

@@ -24,6 +24,7 @@ import {
   LandUnitType,
 } from '../utils/calculators';
 import { HistoryRecord } from '../utils/storage';
+import { shareContentNative } from '../utils/nativeBridge';
 import { PrintableReport } from './PrintSheet';
 
 interface NolCalculatorViewProps {
@@ -86,29 +87,29 @@ export const NolCalculatorView: React.FC<NolCalculatorViewProps> = ({
   const [note, setNote] = useState('');
   const [showNoteBox, setShowNoteBox] = useState(false);
 
-  // ১. ক্ষেত্রফল নির্ণয় (শুধুমাত্র ১টি দৈর্ঘ্য ও ১টি প্রস্থ)
+  // ১. ক্ষেত্রফল নির্ণয় (শুরুতে সব মাপের ঘর খালি থাকবে)
   const [lengthSide, setLengthSide] = useState<SideState>({
-    nol: '১০',
-    hat: '০',
-    bighat: '০',
-    angul: '০',
+    nol: '',
+    hat: '',
+    bighat: '',
+    angul: '',
   });
   const [widthSide, setWidthSide] = useState<SideState>({
-    nol: '৫',
-    hat: '০',
-    bighat: '০',
-    angul: '০',
+    nol: '',
+    hat: '',
+    bighat: '',
+    angul: '',
   });
   const [nolResult, setNolResult] = useState<NolLandResult | null>(null);
 
-  // ২. সীমানা নির্ণয়
-  const [targetAmount, setTargetAmount] = useState('১০');
+  // ২. সীমানা নির্ণয় (শুরুতে সব মাপের ঘর খালি থাকবে)
+  const [targetAmount, setTargetAmount] = useState('');
   const [targetUnit, setTargetUnit] = useState<LandUnitType>('decimal');
   const [knownSide, setKnownSide] = useState<SideState>({
-    nol: '১০',
-    hat: '০',
-    bighat: '০',
-    angul: '০',
+    nol: '',
+    hat: '',
+    bighat: '',
+    angul: '',
   });
   const [revResult, setRevResult] = useState<ReverseNolResult | null>(null);
 
@@ -516,16 +517,7 @@ export const NolCalculatorView: React.FC<NolCalculatorViewProps> = ({
                   type="button"
                   onClick={async () => {
                     const text = `নলের হিসাব (${selectedNolMeta.wordLabel})\nমোট জমি: ${toBnNum(nolResult.decimal, 3)} শতক (${toBnNum(nolResult.sqFt, 2)} বর্গফুট)\n${nolResult.mixedText}`;
-                    if (navigator.share) {
-                      try {
-                        await navigator.share({ title: 'নলের হিসাব', text });
-                        return;
-                      } catch {
-                        // ignore
-                      }
-                    }
-                    navigator.clipboard.writeText(text);
-                    onNotify('শেয়ারের জন্য কপি করা হয়েছে!');
+                    await shareContentNative('নলের হিসাব', text, onNotify);
                   }}
                   className="h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-100 active:scale-95 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
                 >

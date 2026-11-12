@@ -26,6 +26,7 @@ import {
   LandUnitType,
 } from '../utils/calculators';
 import { HistoryRecord } from '../utils/storage';
+import { shareContentNative } from '../utils/nativeBridge';
 import { PrintableReport } from './PrintSheet';
 
 interface LandCalculatorViewProps {
@@ -58,33 +59,33 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
   const [note, setNote] = useState<string>('');
   const [showNoteBox, setShowNoteBox] = useState<boolean>(false);
 
-  // চতুর্ভুজ ও গড় নিয়ম
-  const [northFt, setNorthFt] = useState('১০০');
-  const [northIn, setNorthIn] = useState('০');
-  const [southFt, setSouthFt] = useState('১০০');
-  const [southIn, setSouthIn] = useState('০');
-  const [eastFt, setEastFt] = useState('৪৩');
-  const [eastIn, setEastIn] = useState('৬');
-  const [westFt, setWestFt] = useState('৪৩');
-  const [westIn, setWestIn] = useState('৬');
+  // চতুর্ভুজ ও গড় নিয়ম (শুরুতে সব ঘর খালি থাকবে)
+  const [northFt, setNorthFt] = useState('');
+  const [northIn, setNorthIn] = useState('');
+  const [southFt, setSouthFt] = useState('');
+  const [southIn, setSouthIn] = useState('');
+  const [eastFt, setEastFt] = useState('');
+  const [eastIn, setEastIn] = useState('');
+  const [westFt, setWestFt] = useState('');
+  const [westIn, setWestIn] = useState('');
   const [quadResult, setQuadResult] = useState<LandResult | null>(null);
 
-  // বিষমবাহু ও ত্রিভুজ নিয়ম
-  const [sideAFt, setSideAFt] = useState('৬০');
-  const [sideAIn, setSideAIn] = useState('০');
-  const [sideBFt, setSideBFt] = useState('৮০');
-  const [sideBIn, setSideBIn] = useState('০');
-  const [sideCFt, setSideCFt] = useState('১০০');
-  const [sideCIn, setSideCIn] = useState('০');
+  // বিষমবাহু ও ত্রিভুজ নিয়ম (শুরুতে সব ঘর খালি থাকবে)
+  const [sideAFt, setSideAFt] = useState('');
+  const [sideAIn, setSideAIn] = useState('');
+  const [sideBFt, setSideBFt] = useState('');
+  const [sideBIn, setSideBIn] = useState('');
+  const [sideCFt, setSideCFt] = useState('');
+  const [sideCIn, setSideCIn] = useState('');
   const [heronResult, setHeronResult] = useState<HeronResult | null>(null);
   const [heronError, setHeronError] = useState<string>('');
 
-  // বিপরীত সীমানা নির্ণয়
-  const [targetAmount, setTargetAmount] = useState('১০');
+  // বিপরীত সীমানা নির্ণয় (শুরুতে সব ঘর খালি থাকবে)
+  const [targetAmount, setTargetAmount] = useState('');
   const [targetUnit, setTargetUnit] = useState<LandUnitType>('decimal');
   const [unitMenuOpen, setUnitMenuOpen] = useState(false);
-  const [knownFt, setKnownFt] = useState('১০০');
-  const [knownIn, setKnownIn] = useState('০');
+  const [knownFt, setKnownFt] = useState('');
+  const [knownIn, setKnownIn] = useState('');
   const [reverseResult, setReverseResult] = useState<ReverseLandResult | null>(null);
 
   const buildLandDetailsList = (res: LandResult) => [
@@ -252,16 +253,7 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
       const text =
         `জমির হিসাব (${subTitle})\n${note ? `নোট: ${note}\n` : ''}${inputsText}\n` +
         details.map((d) => `• ${d.label}: ${d.value}`).join('\n');
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: 'জমির হিসাব ফলাফল', text });
-          return;
-        } catch {
-          // fallback
-        }
-      }
-      navigator.clipboard.writeText(text);
-      onNotify('শেয়ারের জন্য ফলাফল কপি করা হয়েছে!');
+      await shareContentNative('জমির হিসাব ফলাফল', text, onNotify);
     };
 
     const handlePrintReport = () => {

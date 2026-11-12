@@ -19,6 +19,7 @@ import {
   SoilCalculationResult,
 } from '../utils/calculators';
 import { HistoryRecord } from '../utils/storage';
+import { shareContentNative } from '../utils/nativeBridge';
 import { PrintableReport } from './PrintSheet';
 
 interface SoilCalculatorViewProps {
@@ -37,30 +38,30 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
   const [note, setNote] = useState('');
   const [showNoteBox, setShowNoteBox] = useState(false);
 
-  // দৈর্ঘ্য (ডিফল্ট ২টি মাপ, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [len1, setLen1] = useState('৫০');
-  const [len2, setLen2] = useState('৫০');
+  // দৈর্ঘ্য (ডিফল্ট ২টি মাপ খালি থাকবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
+  const [len1, setLen1] = useState('');
+  const [len2, setLen2] = useState('');
   const [len3, setLen3] = useState('');
   const [len4, setLen4] = useState('');
   const [showExtraLen, setShowExtraLen] = useState(false);
 
-  // প্রস্থ (ডিফল্ট ২টি মাপ, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [wid1, setWid1] = useState('৩০');
-  const [wid2, setWid2] = useState('৩০');
+  // প্রস্থ (ডিফল্ট ২টি মাপ খালি থাকবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
+  const [wid1, setWid1] = useState('');
+  const [wid2, setWid2] = useState('');
   const [wid3, setWid3] = useState('');
   const [wid4, setWid4] = useState('');
   const [showExtraWid, setShowExtraWid] = useState(false);
 
-  // উচ্চতা / গভীরতা (ডিফল্ট ২টি মাপ, ১টি দিলেও কাজ করবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [dep1, setDep1] = useState('৫');
+  // উচ্চতা / গভীরতা (ডিফল্ট ২টি মাপ খালি থাকবে, ১টি দিলেও কাজ করবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
+  const [dep1, setDep1] = useState('');
   const [dep2, setDep2] = useState('');
   const [dep3, setDep3] = useState('');
   const [dep4, setDep4] = useState('');
   const [showExtraDep, setShowExtraDep] = useState(false);
 
-  // দাম মোড (ডিফল্ট ১০০০ ফুট মাটির দাম)
+  // দাম মোড (ডিফল্ট ১০০০ ফুট মাটির দাম, দর ঘর শুরুতে খালি থাকবে)
   const [priceMode, setPriceMode] = useState<SoilPriceMode>('per_1000_cft');
-  const [rateInput, setRateInput] = useState('৪৫০০');
+  const [rateInput, setRateInput] = useState('');
   const [result, setResult] = useState<SoilCalculationResult | null>(null);
 
   const handleCalculateSoil = (e: React.FormEvent) => {
@@ -439,16 +440,7 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
                 type="button"
                 onClick={async () => {
                   const text = `মাটির হিসাব\nমোট মাটি: ${toBnNum(result.volumeCft, 2)} ঘনফুট (সিএফটি)\nমোট মূল্য: ${formatBnCurrency(result.totalCost)}`;
-                  if (navigator.share) {
-                    try {
-                      await navigator.share({ title: 'মাটির হিসাব', text });
-                      return;
-                    } catch {
-                      // ignore
-                    }
-                  }
-                  navigator.clipboard.writeText(text);
-                  onNotify('শেয়ারের জন্য কপি করা হয়েছে!');
+                  await shareContentNative('মাটির হিসাব', text, onNotify);
                 }}
                 className="h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-100 active:scale-95 text-xs font-bold text-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
               >

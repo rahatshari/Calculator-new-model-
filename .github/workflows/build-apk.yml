@@ -1,4 +1,4 @@
-name: Build Android APK (হিসাব ক্যালকুলেটর)
+name: Build & Release Android APK (হিসাব ক্যালকুলেটর)
 
 on:
   push:
@@ -15,7 +15,7 @@ env:
 
 jobs:
   build-android-apk:
-    name: Build Hisab Calculator APK
+    name: Build & Release Hisab Calculator APK
     runs-on: ubuntu-latest
 
     steps:
@@ -43,11 +43,24 @@ jobs:
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
           fi
 
-      - name: ৫. প্রজেক্ট প্যাকেজ ইনস্টল ও ওয়েব বান্ডেল বিল্ড
+      - name: ৫. স্বয়ংক্রিয় ভার্সন বৃদ্ধি (Auto-Increment Version) ও ওয়েব বিল্ড
         run: |
+          BUILD_NUM="${{ github.run_number }}"
+          NEW_VERSION="1.0.${BUILD_NUM}"
+          REPO_SLUG="${{ github.repository }}"
+          echo "APP_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+          echo "BUILD_NUM=${BUILD_NUM}" >> $GITHUB_ENV
+
+          cat > src/version.ts <<EOF
+          export const APP_VERSION = '${NEW_VERSION}';
+          export const APP_BUILD_NUMBER = ${BUILD_NUM};
+          export const GITHUB_REPO = '${REPO_SLUG}';
+          EOF
+
           node -e '
             const fs = require("fs");
             const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.env.NEW_VERSION || "1.0.1";
             pkg.dependencies = {
               "lucide-react": "latest",
               "react": "^19.0.0",
@@ -70,7 +83,7 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
-      - name: ৬. Capacitor Android প্রজেক্ট কনফিগার ও সিঙ্ক
+      - name: ৬. Capacitor Android প্রজেক্ট কনফিগার ও ভার্সন আপডেট
         run: |
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest --no-save --legacy-peer-deps
           if [ ! -d "android" ]; then
@@ -78,36 +91,185 @@ jobs:
           fi
           npx cap sync android
 
-      - name: ৭. এআই লোগো দিয়ে Android APK আইকন সেটআপ
-        run: |
-          if [ -f "assets/icon.png" ] && command -v convert >/dev/null 2>&1; then
-            convert assets/icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png || true
-            convert assets/icon.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png || true
-            convert assets/icon.png -resize 108x108 android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png || true
-            convert assets/icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png || true
-            convert assets/icon.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png || true
-            convert assets/icon.png -resize 162x162 android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png || true
-            convert assets/icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true
-            convert assets/icon.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png || true
-            convert assets/icon.png -resize 216x216 android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png || true
-            convert assets/icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png || true
-            convert assets/icon.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png || true
-            convert assets/icon.png -resize 324x324 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png || true
-            convert assets/icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
-            convert assets/icon.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
-            convert assets/icon.png -resize 432x432 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png || true
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/g" android/app/build.gradle
+            sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/g" android/app/build.gradle
           fi
 
-      - name: ৮. Gradle দিয়ে Android APK তৈরি (Assemble APK)
+      - name: ৭. অ্যাপ লোগো, লোডিং স্প্ল্যাশ স্ক্রিন এবং নেটিভ প্রিন্ট ও শেয়ার ব্রিজ সেটআপ
+        run: |
+          # ১) প্রি-জেনারেটেড লোগো ও স্প্ল্যাশ ইমেজ কপি করা এবং Capacitor-এর ডিফল্ট অ্যাডাপ্টিভ আইকন মুছে ফেলা
+          if [ -d "assets/android-res" ]; then
+            cp -rf assets/android-res/mipmap-* android/app/src/main/res/
+            mkdir -p android/app/src/main/res/drawable
+            cp -rf assets/android-res/drawable/* android/app/src/main/res/drawable/
+          fi
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+          rm -f android/app/src/main/res/drawable/ic_launcher_foreground.xml
+          rm -f android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+
+          # ২) নেটিভ অ্যান্ড্রয়েড স্টার্টআপ লোডিং স্প্ল্যাশ স্ক্রিন (যাতে অ্যাপে ঢোকার সময় সাথে সাথে লোগো দেখায়)
+          cat > android/app/src/main/res/drawable/launch_splash.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+              <item>
+                  <shape android:shape="rectangle">
+                      <solid android:color="#123E6D" />
+                  </shape>
+              </item>
+              <item
+                  android:width="150dp"
+                  android:height="150dp"
+                  android:gravity="center"
+                  android:drawable="@mipmap/ic_launcher" />
+          </layer-list>
+          EOF
+
+          cat > android/app/src/main/res/values/styles.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+                  <item name="colorPrimary">#123E6D</item>
+                  <item name="colorPrimaryDark">#0E3157</item>
+                  <item name="colorAccent">#123E6D</item>
+              </style>
+              <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+                  <item name="windowActionBar">false</item>
+                  <item name="windowNoTitle">true</item>
+                  <item name="android:background">@null</item>
+                  <item name="android:statusBarColor">#123E6D</item>
+              </style>
+              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+                  <item name="android:background">@drawable/launch_splash</item>
+                  <item name="android:windowBackground">@drawable/launch_splash</item>
+                  <item name="android:statusBarColor">#123E6D</item>
+              </style>
+          </resources>
+          EOF
+
+          # ৩) নেটিভ প্রিন্ট, শেয়ার এবং অ্যান্ড্রয়েড হার্ডওয়্যার ব্যাক বাটন (OnBackPressedDispatcher) সেটআপ
+          MAIN_ACTIVITY_DIR="android/app/src/main/java/bd/hisab/calculator"
+          mkdir -p "$MAIN_ACTIVITY_DIR"
+          cat > "$MAIN_ACTIVITY_DIR/MainActivity.java" << 'EOF'
+          package bd.hisab.calculator;
+
+          import android.content.Context;
+          import android.content.Intent;
+          import android.os.Bundle;
+          import android.print.PrintAttributes;
+          import android.print.PrintDocumentAdapter;
+          import android.print.PrintManager;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.WebView;
+          import androidx.activity.OnBackPressedCallback;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  if (this.bridge != null && this.bridge.getWebView() != null) {
+                      final WebView webView = this.bridge.getWebView();
+                      webView.addJavascriptInterface(new AndroidBridge(this, webView), "AndroidBridge");
+
+                      getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                          @Override
+                          public void handleOnBackPressed() {
+                              webView.evaluateJavascript(
+                                  "(function(){ return (window.__handleAndroidBack && window.__handleAndroidBack()) ? 'CONSUMED' : 'EXIT'; })()",
+                                  value -> {
+                                      if (value == null || !value.contains("CONSUMED")) {
+                                          if (webView.canGoBack()) {
+                                              webView.goBack();
+                                          } else {
+                                              moveTaskToBack(true);
+                                          }
+                                      }
+                                  }
+                              );
+                          }
+                      });
+                  }
+              }
+
+              public static class AndroidBridge {
+                  private final BridgeActivity activity;
+                  private final WebView webView;
+
+                  public AndroidBridge(BridgeActivity activity, WebView webView) {
+                      this.activity = activity;
+                      this.webView = webView;
+                  }
+
+                  @JavascriptInterface
+                  public void shareText(final String title, final String text) {
+                      activity.runOnUiThread(() -> {
+                          Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                          sendIntent.setType("text/plain");
+                          sendIntent.putExtra(Intent.EXTRA_SUBJECT, title != null ? title : "হিসাব ক্যালকুলেটর");
+                          sendIntent.putExtra(Intent.EXTRA_TEXT, text != null ? text : "");
+                          Intent shareIntent = Intent.createChooser(sendIntent, title != null ? title : "হিসাব শেয়ার করুন");
+                          activity.startActivity(shareIntent);
+                      });
+                  }
+
+                  @JavascriptInterface
+                  public void printPage(final String jobName) {
+                      activity.runOnUiThread(() -> {
+                          PrintManager printManager = (PrintManager) activity.getSystemService(Context.PRINT_SERVICE);
+                          if (printManager != null && webView != null) {
+                              String name = (jobName != null && !jobName.isEmpty()) ? jobName : "হিসাব ক্যালকুলেটর মেমো";
+                              PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(name);
+                              printManager.print(name, printAdapter, new PrintAttributes.Builder().build());
+                          }
+                      });
+                  }
+              }
+          }
+          EOF
+
+      - name: ৮. Gradle দিয়ে APK তৈরি ও স্থায়ী সিগনেচার (Same Signature) দিয়ে সাইন করা
         working-directory: ./android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../hisab-calculator.apk
+          RAW_APK="app/build/outputs/apk/debug/app-debug.apk"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name "zipalign" | sort -V | tail -n 1)
+
+          if [ -n "$ZIPALIGN" ] && [ -n "$APKSIGNER" ] && [ -f "../android-keystore/hisab-release-key.p12" ]; then
+            "$ZIPALIGN" -f -p 4 "$RAW_APK" ../hisab-calculator-aligned.apk
+            "$APKSIGNER" sign \
+              --ks ../android-keystore/hisab-release-key.p12 \
+              --ks-key-alias hisabkey \
+              --ks-pass pass:hisab123456 \
+              --key-pass pass:hisab123456 \
+              --v1-signing-enabled true \
+              --v2-signing-enabled true \
+              --out ../hisab-calculator.apk \
+              ../hisab-calculator-aligned.apk
+            rm -f ../hisab-calculator-aligned.apk
+            "$APKSIGNER" verify --verbose ../hisab-calculator.apk
+          else
+            cp "$RAW_APK" ../hisab-calculator.apk
+          fi
 
       - name: ৯. ডাউনলোডের জন্য APK ফাইল আপলোড (Upload APK Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: Hisab-Calculator-APK
+          name: Hisab-Calculator-APK-v1.0.${{ github.run_number }}
           path: hisab-calculator.apk
           if-no-files-found: error
+
+      - name: ১০. GitHub Releases-এ স্বয়ংক্রিয়ভাবে নতুন APK প্রকাশ (Auto Release)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v1.0.${{ github.run_number }}"
+          TITLE="হিসাব ক্যালকুলেটর v1.0.${{ github.run_number }}"
+          NOTES="🚀 **হিসাব ক্যালকুলেটর স্বয়ংক্রিয় রিলিজ (সংস্করণ: v1.0.${{ github.run_number }}, বিল্ড: #${{ github.run_number }})**\n\n- ✅ স্থায়ী সিগনেচার (Same Signature Key) দিয়ে সাইন করা—পুরাতন অ্যাপ আনইনস্টল না করেই সরাসরি আপডেট করা যাবে।\n- ✅ অ্যাপের ভেতর থেকে স্বয়ংক্রিয় আপডেট নোটিফিকেশন ও ১-ক্লিকে ডাউনলোড সাপোর্ট।"
+          gh release create "$TAG" hisab-calculator.apk \
+            --title "$TITLE" \
+            --notes "$NOTES" \
+            --latest || \
+          gh release upload "$TAG" hisab-calculator.apk --clobber

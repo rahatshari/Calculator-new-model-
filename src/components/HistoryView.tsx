@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { HistoryRecord, CalculatorCategory } from '../utils/storage';
 import { toBnNum } from '../utils/bengali';
+import { shareContentNative } from '../utils/nativeBridge';
 import { PrintableReport } from './PrintSheet';
 
 interface HistoryViewProps {
@@ -265,16 +266,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   type="button"
                   onClick={async () => {
                     const text = formatRecordText(rec);
-                    if (navigator.share) {
-                      try {
-                        await navigator.share({ title: rec.categoryLabel, text });
-                        return;
-                      } catch {
-                        // ignore
-                      }
-                    }
-                    navigator.clipboard.writeText(text);
-                    onNotify('শেয়ারের জন্য কপি করা হয়েছে!');
+                    await shareContentNative(rec.categoryLabel, text, onNotify);
                   }}
                   className="h-9 rounded-full bg-[#f1f5f9] hover:bg-slate-200 text-xs font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
                 >

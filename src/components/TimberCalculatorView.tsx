@@ -28,6 +28,7 @@ import {
   saveTimberCart,
   clearTimberCart,
 } from '../utils/storage';
+import { shareContentNative } from '../utils/nativeBridge';
 import { PrintableReport } from './PrintSheet';
 
 interface TimberCalculatorViewProps {
@@ -48,22 +49,22 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
   const [showNoteBox, setShowNoteBox] = useState(false);
   const [items, setItems] = useState<TimberItem[]>(() => loadTimberCart());
 
-  // প্রতি সিএফটি (CFT) কাঠের দাম (টাকা)
-  const [ratePerCftInput, setRatePerCftInput] = useState('১২০০');
+  // প্রতি সিএফটি (CFT) কাঠের দাম (শুরুতে খালি থাকবে)
+  const [ratePerCftInput, setRatePerCftInput] = useState('');
 
-  // গোল কাঠের ইনপুট
-  const [girthFt, setGirthFt] = useState('৪');
-  const [girthIn, setGirthIn] = useState('০');
-  const [roundLenFt, setRoundLenFt] = useState('১০');
-  const [roundLenIn, setRoundLenIn] = useState('০');
-  const [roundQty, setRoundQty] = useState('১');
+  // গোল কাঠের ইনপুট (শুরুতে সব মাপ খালি থাকবে)
+  const [girthFt, setGirthFt] = useState('');
+  const [girthIn, setGirthIn] = useState('');
+  const [roundLenFt, setRoundLenFt] = useState('');
+  const [roundLenIn, setRoundLenIn] = useState('');
+  const [roundQty, setRoundQty] = useState('');
 
-  // সাইজ বা চেরাই কাঠের ইনপুট
-  const [widthIn, setWidthIn] = useState('১০');
-  const [thickIn, setThickIn] = useState('২');
-  const [sawnLenFt, setSawnLenFt] = useState('১২');
-  const [sawnLenIn, setSawnLenIn] = useState('০');
-  const [sawnQty, setSawnQty] = useState('৫');
+  // সাইজ বা চেরাই কাঠের ইনপুট (শুরুতে সব মাপ খালি থাকবে)
+  const [widthIn, setWidthIn] = useState('');
+  const [thickIn, setThickIn] = useState('');
+  const [sawnLenFt, setSawnLenFt] = useState('');
+  const [sawnLenIn, setSawnLenIn] = useState('');
+  const [sawnQty, setSawnQty] = useState('');
 
   useEffect(() => {
     saveTimberCart(items);
@@ -362,7 +363,7 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
                 setGirthIn('');
                 setRoundLenFt('');
                 setRoundLenIn('');
-                setRoundQty('১');
+                setRoundQty('');
               }}
               className="h-12 rounded-full bg-[#f1f5f9] hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
@@ -452,7 +453,7 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
                 setThickIn('');
                 setSawnLenFt('');
                 setSawnLenIn('');
-                setSawnQty('১');
+                setSawnQty('');
               }}
               className="h-12 rounded-full bg-[#f1f5f9] hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
             >
@@ -633,16 +634,7 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
               type="button"
               onClick={async () => {
                 const text = formatTimberListText();
-                if (navigator.share) {
-                  try {
-                    await navigator.share({ title: 'গাছ ও কাঠের হিসাব', text });
-                    return;
-                  } catch {
-                    // ignore
-                  }
-                }
-                navigator.clipboard.writeText(text);
-                onNotify('শেয়ারের জন্য তালিকা কপি করা হয়েছে!');
+                await shareContentNative('গাছ ও কাঠের হিসাব', text, onNotify);
               }}
               className="h-10 rounded-full bg-[#f1f5f9] hover:bg-slate-200 active:scale-95 text-xs font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
             >
