@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toBnNum, parseBnNum, formatBnCurrency, feetInchesToFeet } from './bengali';
+import { toBnNum, toBnAngul, parseBnNum, formatBnCurrency, feetInchesToFeet } from './bengali';
 import {
   calculateQuadLand,
   calculateHeronLand,
@@ -9,13 +9,18 @@ import {
   calculateLandByNol,
   calculateReverseNol,
   calculateSoilByAverage,
+  calculateMultiSoilPit,
   calculateRoundTimberCft,
   calculateFlatTimberCft,
 } from './calculators';
 
-test('Bengali numeral conversion and parsing works accurately', () => {
+test('Bengali numeral conversion, Angul formatting without decimals, and parsing works accurately', () => {
   assert.equal(toBnNum(1234567890), '১২৩৪৫৬৭৮৯০');
   assert.equal(toBnNum(435.6, 2), '৪৩৫.৬০');
+  assert.equal(toBnAngul(1), '১');
+  assert.equal(toBnAngul(2), '২');
+  assert.equal(toBnAngul(3), '৩');
+  assert.equal(toBnAngul(1.5), '১.৫');
   assert.equal(parseBnNum('৪৩৫.৬০'), 435.6);
   assert.equal(parseBnNum('100'), 100);
   assert.equal(formatBnCurrency(1500), '৳ ১,৫০০.০০');
@@ -89,6 +94,33 @@ test('Soil CFT calculator: Multi-reading average (avgLen * avgWid * avgHei) & pr
   const resPer1 = calculateSoilByAverage(lenReadings, widReadings, heiReadings, 'per1', 5);
   assert.equal(resPer1.totalCft, 10000);
   assert.equal(resPer1.totalPrice, 50000);
+
+  // Test 6 readings with Feet + Inch (e.g. 9 ft 6 in + 10 ft 6 in = avg 10 ft)
+  const multiRes = calculateMultiSoilPit(
+    [
+      { ft: 9, inch: 6 },
+      { ft: 10, inch: 6 },
+      { ft: 9, inch: 6 },
+      { ft: 10, inch: 6 },
+      { ft: 9, inch: 6 },
+      { ft: 10, inch: 6 },
+    ],
+    [
+      { ft: 19, inch: 6 },
+      { ft: 20, inch: 6 },
+    ],
+    [
+      { ft: 4, inch: 6 },
+      { ft: 5, inch: 6 },
+    ],
+    'per_1000_cft',
+    5000
+  );
+  assert.equal(multiRes.avgLengthFt, 10);
+  assert.equal(multiRes.avgWidthFt, 20);
+  assert.equal(multiRes.avgDepthFt, 5);
+  assert.equal(multiRes.volumeCft, 1000);
+  assert.equal(multiRes.totalCost, 5000);
 });
 
 test('Timber CFT calculator: Hoppus Rule (round) and Size/Flat timber', () => {

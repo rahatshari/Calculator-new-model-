@@ -1,4 +1,4 @@
-import { feetInchesToFeet, sqFtToTraditionalUnits, toBnNum, TraditionalUnits } from './bengali';
+import { feetInchesToFeet, sqFtToTraditionalUnits, toBnAngul, toBnNum, TraditionalUnits } from './bengali';
 
 /**
  * Core Constants from https://rahatshari.github.io/calculator-old-model/
@@ -211,7 +211,7 @@ export function formatNolPartBn(side: NolSideInput): string {
   if (side.nol > 0) parts.push(`${toBnNum(side.nol)} নল`);
   if (side.hat > 0) parts.push(`${toBnNum(side.hat)} হাত`);
   if (side.bighat > 0) parts.push(`${toBnNum(side.bighat)} বিঘাত`);
-  if (side.angul > 0) parts.push(`${toBnNum(side.angul)} আঙুল`);
+  if (side.angul > 0) parts.push(`${toBnAngul(side.angul)} আঙুল`);
   return parts.length > 0 ? parts.join(' ') : '০ নল';
 }
 
@@ -403,19 +403,34 @@ export function calculateReverseNol(
   const reqFeet = knownFt > 0 ? targetSqFt / knownFt : 0;
   const requiredOppositeNol = nolLengthFt > 0 ? reqFeet / nolLengthFt : 0;
 
-  const ansNol = nolLengthFt > 0 ? Math.floor(reqFeet / nolLengthFt) : 0;
-  const remFeet1 = reqFeet - ansNol * nolLengthFt;
-  const ansHat = Math.floor(remFeet1 / FT_PER_HAT);
-  const remFeet2 = remFeet1 - ansHat * FT_PER_HAT;
-  const ansBighat = Math.floor(remFeet2 / FT_PER_BIGHAT);
-  const remFeet3 = remFeet2 - ansBighat * FT_PER_BIGHAT;
-  const ansAngul = Math.round(remFeet3 / FT_PER_ANGUL);
+  let ansNol = nolLengthFt > 0 ? Math.floor(reqFeet / nolLengthFt) : 0;
+  const remFeet1 = Math.max(0, reqFeet - ansNol * nolLengthFt);
+  let ansHat = Math.floor(remFeet1 / FT_PER_HAT);
+  const remFeet2 = Math.max(0, remFeet1 - ansHat * FT_PER_HAT);
+  let ansBighat = Math.floor(remFeet2 / FT_PER_BIGHAT);
+  const remFeet3 = Math.max(0, remFeet2 - ansBighat * FT_PER_BIGHAT);
+
+  // আঙুলের মান: পূর্ণসংখ্যা হলে দশমিক ছাড়া (যেমন ১, ২, ৩) এবং দেড় আঙুল হলে ১.৫
+  let rawAngul = Math.round((remFeet3 / FT_PER_ANGUL) * 2) / 2;
+  if (rawAngul >= 12) {
+    rawAngul -= 12;
+    ansBighat += 1;
+  }
+  if (ansBighat >= 2) {
+    ansBighat -= 2;
+    ansHat += 1;
+  }
+  if (config.hat > 0 && ansHat >= config.hat) {
+    ansHat -= config.hat;
+    ansNol += 1;
+  }
+  const ansAngul = Math.round(rawAngul * 10) / 10;
 
   const parts: string[] = [];
   if (ansNol > 0) parts.push(`${toBnNum(ansNol)} নল`);
   if (ansHat > 0) parts.push(`${toBnNum(ansHat)} হাত`);
   if (ansBighat > 0) parts.push(`${toBnNum(ansBighat)} বিঘাত`);
-  if (ansAngul > 0) parts.push(`${toBnNum(ansAngul)} আঙুল`);
+  if (ansAngul > 0) parts.push(`${toBnAngul(ansAngul)} আঙুল`);
   if (parts.length === 0) parts.push('০ নল');
 
   const ansFt = Math.floor(reqFeet);
@@ -529,16 +544,25 @@ export function calculateSoilByAverage(
   };
 }
 
+export type SoilDimensionEntry = number | { ft: number; inch: number };
+
 export function calculateMultiSoilPit(
-  lengths: number[],
-  widths: number[],
-  depths: number[],
+  lengths: SoilDimensionEntry[],
+  widths: SoilDimensionEntry[],
+  depths: SoilDimensionEntry[],
   priceMode: SoilPriceMode,
   rate: number
 ): SoilCalculationResult {
-  const lReadings: DimReading[] = lengths.map((ft, idx) => ({ id: `l-${idx}`, ft, inch: 0 }));
-  const wReadings: DimReading[] = widths.map((ft, idx) => ({ id: `w-${idx}`, ft, inch: 0 }));
-  const dReadings: DimReading[] = depths.map((ft, idx) => ({ id: `d-${idx}`, ft, inch: 0 }));
+  const toReading =
+    (prefix: string) =>
+    (item: SoilDimensionEntry, idx: number): DimReading =>
+      typeof item === 'number'
+        ? { id: `${prefix}-${idx}`, ft: item, inch: 0 }
+        : { id: `${prefix}-${idx}`, ft: item.ft, inch: item.inch };
+
+  const lReadings: DimReading[] = lengths.map(toReading('l'));
+  const wReadings: DimReading[] = widths.map(toReading('w'));
+  const dReadings: DimReading[] = depths.map(toReading('d'));
 
   const res = calculateSoilByAverage(lReadings, wReadings, dReadings, priceMode, rate);
   return {

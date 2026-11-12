@@ -29,6 +29,16 @@ interface SoilCalculatorViewProps {
   onNotify: (msg: string) => void;
 }
 
+interface DimInputPair {
+  ft: string;
+  inch: string;
+}
+
+const createInitialPairs = (): DimInputPair[] => [
+  { ft: '', inch: '' },
+  { ft: '', inch: '' },
+];
+
 export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
   onBack,
   onSaveHistory,
@@ -38,46 +48,62 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
   const [note, setNote] = useState('');
   const [showNoteBox, setShowNoteBox] = useState(false);
 
-  // দৈর্ঘ্য (ডিফল্ট ২টি মাপ খালি থাকবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [len1, setLen1] = useState('');
-  const [len2, setLen2] = useState('');
-  const [len3, setLen3] = useState('');
-  const [len4, setLen4] = useState('');
-  const [showExtraLen, setShowExtraLen] = useState(false);
-
-  // প্রস্থ (ডিফল্ট ২টি মাপ খালি থাকবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [wid1, setWid1] = useState('');
-  const [wid2, setWid2] = useState('');
-  const [wid3, setWid3] = useState('');
-  const [wid4, setWid4] = useState('');
-  const [showExtraWid, setShowExtraWid] = useState(false);
-
-  // উচ্চতা / গভীরতা (ডিফল্ট ২টি মাপ খালি থাকবে, ১টি দিলেও কাজ করবে, প্লাস বাটনে ক্লিক করলে মাপ ৩ ও মাপ ৪ আসবে)
-  const [dep1, setDep1] = useState('');
-  const [dep2, setDep2] = useState('');
-  const [dep3, setDep3] = useState('');
-  const [dep4, setDep4] = useState('');
-  const [showExtraDep, setShowExtraDep] = useState(false);
+  // দৈর্ঘ্য, প্রস্থ এবং উচ্চতা/গভীরতা: শুরুতে ২টি করে মাপ (ফুট ও ইঞ্চি), '+' চাপলে ২টি করে আনলিমিটেড বাড়তে থাকবে (৩-৪, ৫-৬, ৭-৮...)
+  const [lengths, setLengths] = useState<DimInputPair[]>(createInitialPairs);
+  const [widths, setWidths] = useState<DimInputPair[]>(createInitialPairs);
+  const [depths, setDepths] = useState<DimInputPair[]>(createInitialPairs);
 
   // দাম মোড (ডিফল্ট ১০০০ ফুট মাটির দাম, দর ঘর শুরুতে খালি থাকবে)
   const [priceMode, setPriceMode] = useState<SoilPriceMode>('per_1000_cft');
   const [rateInput, setRateInput] = useState('');
   const [result, setResult] = useState<SoilCalculationResult | null>(null);
 
+  const updatePair = (
+    setter: React.Dispatch<React.SetStateAction<DimInputPair[]>>,
+    index: number,
+    field: 'ft' | 'inch',
+    value: string
+  ) => {
+    setter((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addTwoMorePairs = (
+    setter: React.Dispatch<React.SetStateAction<DimInputPair[]>>
+  ) => {
+    setter((prev) => [...prev, { ft: '', inch: '' }, { ft: '', inch: '' }]);
+  };
+
+  const removeLastTwoPairs = (
+    setter: React.Dispatch<React.SetStateAction<DimInputPair[]>>
+  ) => {
+    setter((prev) => (prev.length > 2 ? prev.slice(0, prev.length - 2) : prev));
+  };
+
   const handleCalculateSoil = (e: React.FormEvent) => {
     e.preventDefault();
-    const lengths = showExtraLen
-      ? [parseBnNum(len1), parseBnNum(len2), parseBnNum(len3), parseBnNum(len4)]
-      : [parseBnNum(len1), parseBnNum(len2)];
-    const widths = showExtraWid
-      ? [parseBnNum(wid1), parseBnNum(wid2), parseBnNum(wid3), parseBnNum(wid4)]
-      : [parseBnNum(wid1), parseBnNum(wid2)];
-    const depths = showExtraDep
-      ? [parseBnNum(dep1), parseBnNum(dep2), parseBnNum(dep3), parseBnNum(dep4)]
-      : [parseBnNum(dep1), parseBnNum(dep2)];
+    const parsedLengths = lengths.map((item) => ({
+      ft: parseBnNum(item.ft),
+      inch: parseBnNum(item.inch),
+    }));
+    const parsedWidths = widths.map((item) => ({
+      ft: parseBnNum(item.ft),
+      inch: parseBnNum(item.inch),
+    }));
+    const parsedDepths = depths.map((item) => ({
+      ft: parseBnNum(item.ft),
+      inch: parseBnNum(item.inch),
+    }));
     const rate = parseBnNum(rateInput);
 
-    const res = calculateMultiSoilPit(lengths, widths, depths, priceMode, rate);
+    const res = calculateMultiSoilPit(
+      parsedLengths,
+      parsedWidths,
+      parsedDepths,
+      priceMode,
+      rate
+    );
     if (res.volumeCft <= 0) {
       onNotify('দয়া করে দৈর্ঘ্য, প্রস্থ এবং উচ্চতা/গভীরতার অন্তত ১টি করে মাপ দিন।');
       return;
@@ -114,20 +140,91 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
   };
 
   const handleClear = () => {
-    setLen1('');
-    setLen2('');
-    setLen3('');
-    setLen4('');
-    setWid1('');
-    setWid2('');
-    setWid3('');
-    setWid4('');
-    setDep1('');
-    setDep2('');
-    setDep3('');
-    setDep4('');
+    setLengths(createInitialPairs());
+    setWidths(createInitialPairs());
+    setDepths(createInitialPairs());
     setRateInput('');
     setResult(null);
+  };
+
+  const renderDimensionSection = (
+    title: string,
+    idPrefix: string,
+    items: DimInputPair[],
+    setter: React.Dispatch<React.SetStateAction<DimInputPair[]>>
+  ) => {
+    const nextFirst = toBnNum(items.length + 1);
+    const nextSecond = toBnNum(items.length + 2);
+
+    return (
+      <div className="rounded-2xl bg-[#f8fafc] border border-slate-200/70 p-3 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-extrabold text-[#123e6d]">{title}</span>
+          <div className="flex items-center gap-1.5">
+            {items.length > 2 && (
+              <button
+                type="button"
+                onClick={() => removeLastTwoPairs(setter)}
+                aria-label={`${title} শেষ ২টি মাপ বাদ দিন`}
+                className="h-7 px-2.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 active:scale-95 flex items-center gap-1 transition-all cursor-pointer"
+              >
+                <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>২টি কমান</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => addTwoMorePairs(setter)}
+              aria-label={`${title} মাপ ${nextFirst} ও ${nextSecond} যোগ করুন`}
+              className="h-7 px-2.5 rounded-full text-[11px] font-bold bg-[#d6e3ff] text-[#001b3d] hover:bg-[#c2d6ff] active:scale-95 flex items-center gap-1 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>
+                মাপ {nextFirst} ও {nextSecond}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {items.map((pair, idx) => {
+            const numBn = toBnNum(idx + 1);
+            return (
+              <div key={`${idPrefix}-row-${idx}`} className="grid grid-cols-2 gap-2">
+                <BnInput
+                  id={`${idPrefix}-${idx + 1}-ft`}
+                  label={`মাপ ${numBn} (ফুট)`}
+                  value={pair.ft}
+                  onChange={(val) => updatePair(setter, idx, 'ft', val)}
+                  suffix="ফুট"
+                />
+                <BnInput
+                  id={`${idPrefix}-${idx + 1}-in`}
+                  label={`মাপ ${numBn} (ইঞ্চি)`}
+                  value={pair.inch}
+                  onChange={(val) => updatePair(setter, idx, 'inch', val)}
+                  suffix="ইঞ্চি"
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* নিচে প্লাস বাটন: ক্লিক করলেই ৩, ৪ তারপর ৫, ৬ এভাবে ২টি করে আনলিমিটেড বাড়তে থাকবে */}
+        <div className="pt-0.5 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => addTwoMorePairs(setter)}
+            className="w-full h-8 rounded-xl border border-dashed border-[#123e6d]/35 bg-[#d6e3ff]/40 hover:bg-[#d6e3ff]/70 active:scale-[0.99] text-[#123e6d] text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>
+              আরও ২টি মাপ যোগ করুন (মাপ {nextFirst} ও {nextSecond})
+            </span>
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -179,149 +276,14 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
         onSubmit={handleCalculateSoil}
         className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3.5"
       >
-        {/* ১. দৈর্ঘ্য (ফুট) */}
-        <div className="rounded-2xl bg-[#f8fafc] border border-slate-200/70 p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-[#123e6d]">দৈর্ঘ্য (ফুট)</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (showExtraLen) {
-                  setLen3('');
-                  setLen4('');
-                  setShowExtraLen(false);
-                } else {
-                  setShowExtraLen(true);
-                }
-              }}
-              aria-label={showExtraLen ? 'মাপ ৩ ও ৪ লুকান' : 'মাপ ৩ ও ৪ যোগ করুন'}
-              className={`h-7 px-2.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                showExtraLen
-                  ? 'bg-slate-200 text-slate-700'
-                  : 'bg-[#d6e3ff] text-[#001b3d] hover:bg-[#c2d6ff]'
-              }`}
-            >
-              {showExtraLen ? (
-                <>
-                  <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪ বাদ দিন</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪</span>
-                </>
-              )}
-            </button>
-          </div>
+        {/* ১. দৈর্ঘ্য (ফুট ও ইঞ্চি) */}
+        {renderDimensionSection('দৈর্ঘ্য (ফুট ও ইঞ্চি)', 'soil-l', lengths, setLengths)}
 
-          <div className="grid grid-cols-2 gap-2">
-            <BnInput id="soil-l1" label="মাপ ১" value={len1} onChange={setLen1} suffix="ফুট" />
-            <BnInput id="soil-l2" label="মাপ ২" value={len2} onChange={setLen2} suffix="ফুট" />
-            {showExtraLen && (
-              <>
-                <BnInput id="soil-l3" label="মাপ ৩" value={len3} onChange={setLen3} suffix="ফুট" />
-                <BnInput id="soil-l4" label="মাপ ৪" value={len4} onChange={setLen4} suffix="ফুট" />
-              </>
-            )}
-          </div>
-        </div>
+        {/* ২. প্রস্থ (ফুট ও ইঞ্চি) */}
+        {renderDimensionSection('প্রস্থ (ফুট ও ইঞ্চি)', 'soil-w', widths, setWidths)}
 
-        {/* ২. প্রস্থ (ফুট) */}
-        <div className="rounded-2xl bg-[#f8fafc] border border-slate-200/70 p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-[#123e6d]">প্রস্থ (ফুট)</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (showExtraWid) {
-                  setWid3('');
-                  setWid4('');
-                  setShowExtraWid(false);
-                } else {
-                  setShowExtraWid(true);
-                }
-              }}
-              aria-label={showExtraWid ? 'মাপ ৩ ও ৪ লুকান' : 'মাপ ৩ ও ৪ যোগ করুন'}
-              className={`h-7 px-2.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                showExtraWid
-                  ? 'bg-slate-200 text-slate-700'
-                  : 'bg-[#d6e3ff] text-[#001b3d] hover:bg-[#c2d6ff]'
-              }`}
-            >
-              {showExtraWid ? (
-                <>
-                  <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪ বাদ দিন</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <BnInput id="soil-w1" label="মাপ ১" value={wid1} onChange={setWid1} suffix="ফুট" />
-            <BnInput id="soil-w2" label="মাপ ২" value={wid2} onChange={setWid2} suffix="ফুট" />
-            {showExtraWid && (
-              <>
-                <BnInput id="soil-w3" label="মাপ ৩" value={wid3} onChange={setWid3} suffix="ফুট" />
-                <BnInput id="soil-w4" label="মাপ ৪" value={wid4} onChange={setWid4} suffix="ফুট" />
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* ৩. উচ্চতা বা গভীরতা (ফুট) */}
-        <div className="rounded-2xl bg-[#f8fafc] border border-slate-200/70 p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-[#123e6d]">উচ্চতা বা গভীরতা (ফুট)</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (showExtraDep) {
-                  setDep3('');
-                  setDep4('');
-                  setShowExtraDep(false);
-                } else {
-                  setShowExtraDep(true);
-                }
-              }}
-              aria-label={showExtraDep ? 'মাপ ৩ ও ৪ লুকান' : 'মাপ ৩ ও ৪ যোগ করুন'}
-              className={`h-7 px-2.5 rounded-full text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                showExtraDep
-                  ? 'bg-slate-200 text-slate-700'
-                  : 'bg-[#d6e3ff] text-[#001b3d] hover:bg-[#c2d6ff]'
-              }`}
-            >
-              {showExtraDep ? (
-                <>
-                  <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪ বাদ দিন</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>মাপ ৩ ও ৪</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <BnInput id="soil-d1" label="মাপ ১" value={dep1} onChange={setDep1} suffix="ফুট" />
-            <BnInput id="soil-d2" label="মাপ ২" value={dep2} onChange={setDep2} suffix="ফুট" />
-            {showExtraDep && (
-              <>
-                <BnInput id="soil-d3" label="মাপ ৩" value={dep3} onChange={setDep3} suffix="ফুট" />
-                <BnInput id="soil-d4" label="মাপ ৪" value={dep4} onChange={setDep4} suffix="ফুট" />
-              </>
-            )}
-          </div>
-        </div>
+        {/* ৩. উচ্চতা বা গভীরতা (ফুট ও ইঞ্চি) */}
+        {renderDimensionSection('উচ্চতা বা গভীরতা (ফুট ও ইঞ্চি)', 'soil-d', depths, setDepths)}
 
         {/* মাটির কাজের দর (Material 3 Segmented Toggle) */}
         <div className="space-y-2 pt-1">

@@ -27,6 +27,23 @@ export function toBnNum(val: number | string | undefined | null, decimals?: numb
 }
 
 /**
+ * আঙুল বা যেকোনো সংখ্যার জন্য: পূর্ণসংখ্যা হলে কোনো দশমিক দেখাবে না (যেমন: ১, ২, ৩),
+ * এবং ভগ্নাংশ থাকলে শুধুমাত্র প্রয়োজনীয় দশমিক দেখাবে (যেমন: ১.৫ আঙুল, শেষে বাড়তি ০ ছাড়া)।
+ */
+export function toBnAngul(val: number | string | undefined | null): string {
+  if (val === undefined || val === null || val === '') return '০';
+  const num = typeof val === 'number' ? val : parseBnNum(val);
+  if (isNaN(num) || num === 0) return '০';
+
+  const rounded = Math.round(num * 10) / 10;
+  if (Number.isInteger(rounded)) {
+    return toBnNum(Math.round(rounded));
+  }
+  return toBnNum(rounded.toFixed(1).replace(/\.0$/, ''));
+}
+
+
+/**
  * Parses a string containing either English (0-9) or Bengali (০-৯) digits into a standard JS number.
  */
 export function parseBnNum(val: string | number): number {

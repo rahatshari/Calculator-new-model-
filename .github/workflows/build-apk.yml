@@ -85,52 +85,47 @@ jobs:
 
       - name: ৬. Capacitor Android প্রজেক্ট কনফিগার ও ভার্সন আপডেট
         run: |
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest --no-save --legacy-peer-deps
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest @capacitor/app@latest @capacitor/share@latest --no-save --legacy-peer-deps
           if [ ! -d "android" ]; then
             npx cap add android
           fi
           npx cap sync android
 
           if [ -f "android/app/build.gradle" ]; then
+            sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/g" android/app/src/main/build.gradle 2>/dev/null || true
             sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/g" android/app/build.gradle
             sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/g" android/app/build.gradle
           fi
 
-      - name: ৭. অ্যাপ লোগো, লোডিং স্প্ল্যাশ স্ক্রিন এবং নেটিভ প্রিন্ট ও শেয়ার ব্রিজ সেটআপ
+      - name: ৭. অ্যাপ লোগো, ০-মিলিসেকেন্ড ফাস্ট লঞ্চ এবং নেটিভ প্রিন্ট, শেয়ার ও ব্যাক বাটন সেটআপ
         run: |
-          # ১) প্রি-জেনারেটেড লোগো ও স্প্ল্যাশ ইমেজ কপি করা এবং Capacitor-এর ডিফল্ট অ্যাডাপ্টিভ আইকন মুছে ফেলা
+          # ১) প্রি-জেনারেটেড লোগো কপি করা এবং Capacitor-এর ডিফল্ট অ্যাডাপ্টিভ আইকন ও স্প্ল্যাশ মুছে ফেলা
           if [ -d "assets/android-res" ]; then
             cp -rf assets/android-res/mipmap-* android/app/src/main/res/
-            mkdir -p android/app/src/main/res/drawable
-            cp -rf assets/android-res/drawable/* android/app/src/main/res/drawable/
           fi
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
           rm -f android/app/src/main/res/drawable/ic_launcher_foreground.xml
           rm -f android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+          rm -f android/app/src/main/res/drawable/splash.png
+          rm -rf android/app/src/main/res/drawable-port-*
+          rm -rf android/app/src/main/res/drawable-land-*
 
-          # ২) নেটিভ অ্যান্ড্রয়েড স্টার্টআপ লোডিং স্প্ল্যাশ স্ক্রিন (যাতে অ্যাপে ঢোকার সময় সাথে সাথে লোগো দেখায়)
-          cat > android/app/src/main/res/drawable/launch_splash.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-              <item>
-                  <shape android:shape="rectangle">
-                      <solid android:color="#123E6D" />
-                  </shape>
-              </item>
-              <item
-                  android:width="150dp"
-                  android:height="150dp"
-                  android:gravity="center"
-                  android:drawable="@mipmap/ic_launcher" />
-          </layer-list>
-          EOF
+          # ২) Android 13/14/15/16-এ ব্যাক বাটন সরাসরি অ্যাপ বন্ধ হওয়া রোধ করতে AndroidManifest.xml আপডেট
+          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_FILE" ]; then
+            sed -i 's/android:enableOnBackInvokedCallback="true"/android:enableOnBackInvokedCallback="false"/g' "$MANIFEST_FILE"
+            if ! grep -q "enableOnBackInvokedCallback" "$MANIFEST_FILE"; then
+              sed -i 's/<application/<application android:enableOnBackInvokedCallback="false"/g' "$MANIFEST_FILE"
+            fi
+          fi
 
+          # ৩) লোডিং স্ক্রিন ছাড়া সাথে সাথে (0ms Instant Launch) অ্যাপে ঢোকার স্টাইল কনফিগারেশন
           cat > android/app/src/main/res/values/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
                   <item name="colorPrimary">#123E6D</item>
-                  <item name="colorPrimaryDark">#0E3157</item>
+                  <item name="colorPrimaryDark">#123E6D</item>
                   <item name="colorAccent">#123E6D</item>
               </style>
               <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
@@ -138,20 +133,31 @@ jobs:
                   <item name="windowNoTitle">true</item>
                   <item name="android:background">@null</item>
                   <item name="android:statusBarColor">#123E6D</item>
+                  <item name="android:windowDisablePreview">true</item>
+                  <item name="android:windowAnimationStyle">@null</item>
               </style>
-              <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-                  <item name="android:background">@drawable/launch_splash</item>
-                  <item name="android:windowBackground">@drawable/launch_splash</item>
+              <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
+                  <item name="android:windowDisablePreview">true</item>
+                  <item name="android:windowAnimationStyle">@null</item>
                   <item name="android:statusBarColor">#123E6D</item>
               </style>
           </resources>
           EOF
 
-          # ৩) নেটিভ প্রিন্ট, শেয়ার এবং অ্যান্ড্রয়েড হার্ডওয়্যার ব্যাক বাটন (OnBackPressedDispatcher) সেটআপ
-          MAIN_ACTIVITY_DIR="android/app/src/main/java/bd/hisab/calculator"
-          mkdir -p "$MAIN_ACTIVITY_DIR"
-          cat > "$MAIN_ACTIVITY_DIR/MainActivity.java" << 'EOF'
-          package bd.hisab.calculator;
+          # ৪) আসল MainActivity.java ফাইল খুঁজে বের করে নেটিভ PrintManager, Share Intent ও ১০০% কার্যকরী Back Button যুক্ত করা
+          MAIN_FILE=$(find android/app/src/main/java -name "MainActivity.java" | head -n 1)
+          if [ -z "$MAIN_FILE" ]; then
+            MAIN_FILE="android/app/src/main/java/com/rahatsharif/hisabcalculator/MainActivity.java"
+            mkdir -p "$(dirname "$MAIN_FILE")"
+            PKG_LINE="package com.rahatsharif.hisabcalculator;"
+          else
+            PKG_LINE=$(grep "^package " "$MAIN_FILE" | head -n 1)
+          fi
+
+          echo "Updating MainActivity at: $MAIN_FILE ($PKG_LINE)"
+
+          cat > "$MAIN_FILE" << EOF
+          $PKG_LINE
 
           import android.content.Context;
           import android.content.Intent;
@@ -159,70 +165,193 @@ jobs:
           import android.print.PrintAttributes;
           import android.print.PrintDocumentAdapter;
           import android.print.PrintManager;
+          import android.view.KeyEvent;
           import android.webkit.JavascriptInterface;
           import android.webkit.WebView;
+          import android.webkit.WebViewClient;
           import androidx.activity.OnBackPressedCallback;
           import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
 
           public class MainActivity extends BridgeActivity {
+              private WebView mPrintWebView;
+              private volatile boolean jsCanGoBack = false;
+              private boolean bridgeAttached = false;
+              private OnBackPressedCallback customBackCallback;
+
               @Override
               public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(NativeToolsPlugin.class);
                   super.onCreate(savedInstanceState);
-                  if (this.bridge != null && this.bridge.getWebView() != null) {
-                      final WebView webView = this.bridge.getWebView();
-                      webView.addJavascriptInterface(new AndroidBridge(this, webView), "AndroidBridge");
+                  setupBridgeAndBackHandler();
+              }
 
-                      getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-                          @Override
-                          public void handleOnBackPressed() {
+              @Override
+              public void onResume() {
+                  super.onResume();
+                  setupBridgeAndBackHandler();
+              }
+
+              private void setupBridgeAndBackHandler() {
+                  if (this.getBridge() != null && this.getBridge().getWebView() != null) {
+                      final WebView webView = this.getBridge().getWebView();
+                      if (!bridgeAttached) {
+                          webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
+                          bridgeAttached = true;
+                      }
+                  }
+
+                  if (customBackCallback != null) {
+                      customBackCallback.remove();
+                  }
+                  customBackCallback = new OnBackPressedCallback(true) {
+                      @Override
+                      public void handleOnBackPressed() {
+                          handleCustomBackPress();
+                      }
+                  };
+                  getOnBackPressedDispatcher().addCallback(this, customBackCallback);
+              }
+
+              @Override
+              public boolean dispatchKeyEvent(KeyEvent event) {
+                  if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+                      if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
+                          handleCustomBackPress();
+                      }
+                      return true;
+                  }
+                  return super.dispatchKeyEvent(event);
+              }
+
+              @SuppressWarnings("deprecation")
+              @Override
+              public void onBackPressed() {
+                  handleCustomBackPress();
+              }
+
+              public void setJsCanGoBack(boolean canGoBack) {
+                  this.jsCanGoBack = canGoBack;
+              }
+
+              public void handleCustomBackPress() {
+                  runOnUiThread(() -> {
+                      if (getBridge() != null && getBridge().getWebView() != null) {
+                          final WebView webView = getBridge().getWebView();
+                          if (jsCanGoBack) {
+                              jsCanGoBack = false;
                               webView.evaluateJavascript(
-                                  "(function(){ return (window.__handleAndroidBack && window.__handleAndroidBack()) ? 'CONSUMED' : 'EXIT'; })()",
-                                  value -> {
-                                      if (value == null || !value.contains("CONSUMED")) {
-                                          if (webView.canGoBack()) {
-                                              webView.goBack();
-                                          } else {
-                                              moveTaskToBack(true);
-                                          }
-                                      }
-                                  }
+                                  "if (window.__handleAndroidBack) { window.__handleAndroidBack(); }",
+                                  null
                               );
+                              return;
                           }
-                      });
+                          webView.evaluateJavascript(
+                              "(function(){ return (window.__handleAndroidBack && window.__handleAndroidBack()) ? 'CONSUMED' : 'EXIT'; })()",
+                              value -> {
+                                  if (value == null || !value.contains("CONSUMED")) {
+                                      moveTaskToBack(true);
+                                  }
+                              }
+                          );
+                      } else {
+                          moveTaskToBack(true);
+                      }
+                  });
+              }
+
+              public void executeNativeShare(final String title, final String text) {
+                  runOnUiThread(() -> {
+                      String safeTitle = (title != null && !title.isEmpty()) ? title : "হিসাব ক্যালকুলেটর";
+                      String safeText = (text != null) ? text : "";
+                      Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                      sendIntent.setType("text/plain");
+                      sendIntent.putExtra(Intent.EXTRA_SUBJECT, safeTitle);
+                      sendIntent.putExtra(Intent.EXTRA_TEXT, safeText);
+                      Intent chooser = Intent.createChooser(sendIntent, safeTitle);
+                      startActivity(chooser);
+                  });
+              }
+
+              public void executeNativePrint(final String jobName, final String htmlContent) {
+                  runOnUiThread(() -> {
+                      final String safeJobName = (jobName != null && !jobName.isEmpty()) ? jobName : "Hisab_Calculator_Report";
+                      if (htmlContent != null && !htmlContent.isEmpty()) {
+                          WebView printView = new WebView(MainActivity.this);
+                          mPrintWebView = printView;
+                          printView.setWebViewClient(new WebViewClient() {
+                              @Override
+                              public void onPageFinished(WebView view, String url) {
+                                  PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                                  if (printManager != null) {
+                                      PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeJobName);
+                                      printManager.print(safeJobName, adapter, new PrintAttributes.Builder().build());
+                                  }
+                                  mPrintWebView = null;
+                              }
+                          });
+                          printView.loadDataWithBaseURL("https://localhost/", htmlContent, "text/html", "UTF-8", null);
+                      } else if (getBridge() != null && getBridge().getWebView() != null) {
+                          PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                          if (printManager != null) {
+                              PrintDocumentAdapter adapter = getBridge().getWebView().createPrintDocumentAdapter(safeJobName);
+                              printManager.print(safeJobName, adapter, new PrintAttributes.Builder().build());
+                          }
+                      }
+                  });
+              }
+
+              @CapacitorPlugin(name = "NativeTools")
+              public static class NativeToolsPlugin extends Plugin {
+                  @PluginMethod
+                  public void shareText(PluginCall call) {
+                      String title = call.getString("title", "হিসাব ক্যালকুলেটর");
+                      String text = call.getString("text", "");
+                      if (getActivity() instanceof MainActivity) {
+                          ((MainActivity) getActivity()).executeNativeShare(title, text);
+                      }
+                      call.resolve();
+                  }
+
+                  @PluginMethod
+                  public void printPage(PluginCall call) {
+                      String jobName = call.getString("jobName", "Hisab_Calculator_Report");
+                      String htmlContent = call.getString("htmlContent", "");
+                      if (getActivity() instanceof MainActivity) {
+                          ((MainActivity) getActivity()).executeNativePrint(jobName, htmlContent);
+                      }
+                      call.resolve();
                   }
               }
 
               public static class AndroidBridge {
-                  private final BridgeActivity activity;
-                  private final WebView webView;
+                  private final MainActivity activity;
 
-                  public AndroidBridge(BridgeActivity activity, WebView webView) {
+                  public AndroidBridge(MainActivity activity) {
                       this.activity = activity;
-                      this.webView = webView;
+                  }
+
+                  @JavascriptInterface
+                  public void setCanGoBack(final boolean canGoBack) {
+                      activity.setJsCanGoBack(canGoBack);
                   }
 
                   @JavascriptInterface
                   public void shareText(final String title, final String text) {
-                      activity.runOnUiThread(() -> {
-                          Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                          sendIntent.setType("text/plain");
-                          sendIntent.putExtra(Intent.EXTRA_SUBJECT, title != null ? title : "হিসাব ক্যালকুলেটর");
-                          sendIntent.putExtra(Intent.EXTRA_TEXT, text != null ? text : "");
-                          Intent shareIntent = Intent.createChooser(sendIntent, title != null ? title : "হিসাব শেয়ার করুন");
-                          activity.startActivity(shareIntent);
-                      });
+                      activity.executeNativeShare(title, text);
                   }
 
                   @JavascriptInterface
                   public void printPage(final String jobName) {
-                      activity.runOnUiThread(() -> {
-                          PrintManager printManager = (PrintManager) activity.getSystemService(Context.PRINT_SERVICE);
-                          if (printManager != null && webView != null) {
-                              String name = (jobName != null && !jobName.isEmpty()) ? jobName : "হিসাব ক্যালকুলেটর মেমো";
-                              PrintDocumentAdapter printAdapter = webView.createPrintDocumentAdapter(name);
-                              printManager.print(name, printAdapter, new PrintAttributes.Builder().build());
-                          }
-                      });
+                      activity.executeNativePrint(jobName, null);
+                  }
+
+                  @JavascriptInterface
+                  public void printHtml(final String jobName, final String htmlContent) {
+                      activity.executeNativePrint(jobName, htmlContent);
                   }
               }
           }

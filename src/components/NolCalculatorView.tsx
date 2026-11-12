@@ -13,7 +13,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { BnInput } from './BnInput';
-import { parseBnNum, toBnNum } from '../utils/bengali';
+import { parseBnNum, toBnAngul, toBnNum } from '../utils/bengali';
 import {
   calculateLandByNol,
   calculateReverseNolLand,
@@ -197,7 +197,7 @@ export const NolCalculatorView: React.FC<NolCalculatorViewProps> = ({
 
     setRevResult(res);
 
-    const ansFormatted = `${toBnNum(res.ansNol)} নল ${toBnNum(res.ansHat)} হাত ${toBnNum(res.ansBighat)} বিঘাত ${toBnNum(res.ansAngul, 2)} আঙুল`;
+    const ansFormatted = `${toBnNum(res.ansNol)} নল ${toBnNum(res.ansHat)} হাত ${toBnNum(res.ansBighat)} বিঘাত ${toBnAngul(res.ansAngul)} আঙুল`;
     const inputsText = `১ নল = ${selectedNolMeta.wordLabel} | কাঙ্ক্ষিত জমি: ${toBnNum(amt)} ${UNIT_LABELS[targetUnit]} | জানা বাহু: ${formatNolPartBn(kSide)}`;
     const details = [
       { label: 'অজানা দিকের মাপ (নলে)', value: ansFormatted },
@@ -643,7 +643,7 @@ export const NolCalculatorView: React.FC<NolCalculatorViewProps> = ({
                 <p className="text-xs text-sky-200">অজানা দিকের মাপ লাগবে (নলে):</p>
                 <p className="text-xl font-extrabold mt-0.5">
                   {toBnNum(revResult.ansNol)} নল {toBnNum(revResult.ansHat)} হাত{' '}
-                  {toBnNum(revResult.ansBighat)} বিঘাত {toBnNum(revResult.ansAngul, 2)} আঙুল
+                  {toBnNum(revResult.ansBighat)} বিঘাত {toBnAngul(revResult.ansAngul)} আঙুল
                 </p>
                 <p className="text-xs font-semibold text-sky-100 mt-1.5">
                   ফুটে মাপ: {toBnNum(revResult.ansFt)} ফুট {toBnNum(revResult.ansIn, 2)} ইঞ্চি (

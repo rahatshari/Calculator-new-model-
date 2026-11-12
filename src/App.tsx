@@ -40,6 +40,7 @@ import { TimberCalculatorView } from './components/TimberCalculatorView';
 import { HistoryView } from './components/HistoryView';
 import { SettingsModal } from './components/SettingsModal';
 import { PrintSheet, PrintableReport } from './components/PrintSheet';
+import { triggerPrintNative } from './utils/nativeBridge';
 
 type ScreenView = 'home' | 'land' | 'nol' | 'soil' | 'timber' | 'history';
 
@@ -100,7 +101,6 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [printReport, setPrintReport] = useState<PrintableReport | null>(null);
-  const [showSplash, setShowSplash] = useState(true);
 
   // ইন-অ্যাপ অটো-আপডেট স্টেট (GitHub Releases APK Updater)
   const [availableUpdate, setAvailableUpdate] = useState<UpdateCheckResult | null>(null);
@@ -108,7 +108,7 @@ export default function App() {
 
   const { isInstallable, isInstalled, install: triggerInstall } = usePWAInstall();
 
-  // সর্বশেষ স্টেট রেফারেন্স (যাতে ব্যাক বাটন ইভেন্ট সবসময় আপডেটেড স্টেট পায়)
+  // সর্বশেষ স্টেট রেফারেন্স ও নেটিভ ব্রিজ সিঙ্ক (যাতে ব্যাক বাটন কখনোই ভুল করে অ্যাপ থেকে বের না হয়ে যায়)
   const navStateRef = useRef({
     currentView,
     settingsOpen,
@@ -116,20 +116,30 @@ export default function App() {
   });
   useEffect(() => {
     navStateRef.current = { currentView, settingsOpen, printReport };
+    const canGoBack =
+      currentView !== 'home' || settingsOpen || printReport !== null;
+    try {
+      window.AndroidBridge?.setCanGoBack?.(canGoBack);
+    } catch {
+      // ignore
+    }
   }, [currentView, settingsOpen, printReport]);
 
   // ভিউ পরিবর্তনের হেল্পার (যাতে ব্রাউজার ও অ্যান্ড্রয়েড WebView হিস্ট্রি পুশ হয়)
   const navigateToView = useCallback((nextView: ScreenView) => {
-    setCurrentView((prev) => {
-      if (prev !== nextView) {
-        try {
-          window.history.pushState({ view: nextView }, '', `#${nextView}`);
-        } catch {
-          // ignore
-        }
+    if (navStateRef.current.currentView !== nextView) {
+      try {
+        window.history.pushState({ view: nextView }, '', `#${nextView}`);
+      } catch {
+        // ignore
       }
-      return nextView;
-    });
+    }
+    try {
+      window.AndroidBridge?.setCanGoBack?.(nextView !== 'home');
+    } catch {
+      // ignore
+    }
+    setCurrentView(nextView);
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, []);
 
@@ -137,6 +147,7 @@ export default function App() {
   const handleBackToHome = useCallback(() => {
     setCurrentView('home');
     try {
+      window.AndroidBridge?.setCanGoBack?.(false);
       if (window.location.hash && window.location.hash !== '#home') {
         window.history.replaceState({ view: 'home' }, '', '#home');
       }
@@ -146,7 +157,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, []);
 
-  // অ্যান্ড্রয়েড হার্ডওয়্যার ব্যাক বাটন ও ব্রাউজার popstate হ্যান্ডলার
+  // অ্যান্ড্রয়েড হার্ডওয়্যার ব্যাক বাটন, Capacitor backButton ও ব্রাউজার popstate হ্যান্ডলার
   useEffect(() => {
     try {
       window.history.replaceState({ view: 'home' }, '', '#home');
@@ -163,14 +174,30 @@ export default function App() {
 
       if (activePrint !== null) {
         setPrintReport(null);
+        try {
+          window.AndroidBridge?.setCanGoBack?.(isSettingsOpen || activeView !== 'home');
+        } catch {
+          // ignore
+        }
         return true;
       }
       if (isSettingsOpen) {
         setSettingsOpen(false);
+        try {
+          window.AndroidBridge?.setCanGoBack?.(activeView !== 'home');
+        } catch {
+          // ignore
+        }
         return true;
       }
       if (activeView !== 'home') {
         setCurrentView('home');
+        try {
+          window.AndroidBridge?.setCanGoBack?.(false);
+          window.history.replaceState({ view: 'home' }, '', '#home');
+        } catch {
+          // ignore
+        }
         window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
         return true;
       }
@@ -190,19 +217,49 @@ export default function App() {
       }
     };
 
+    const onCordovaBackButton = (ev: Event) => {
+      const consumed = handleBackAction();
+      if (consumed) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+    };
+
     window.addEventListener('popstate', onPopState);
+    document.addEventListener('backbutton', onCordovaBackButton, false);
+    window.addEventListener('backbutton', onCordovaBackButton, false);
+
+    let capListenerHandle: { remove: () => void } | null = null;
+    try {
+      const maybePromise = window.Capacitor?.Plugins?.App?.addListener?.(
+        'backButton',
+        () => {
+          const consumed = handleBackAction();
+          if (!consumed) {
+            window.Capacitor?.Plugins?.App?.minimizeApp?.();
+          }
+        }
+      );
+      if (maybePromise && typeof (maybePromise as Promise<{ remove: () => void }>).then === 'function') {
+        (maybePromise as Promise<{ remove: () => void }>)
+          .then((h) => {
+            capListenerHandle = h;
+          })
+          .catch(() => {});
+      } else if (maybePromise) {
+        capListenerHandle = maybePromise as { remove: () => void };
+      }
+    } catch {
+      // ignore
+    }
+
     return () => {
       window.removeEventListener('popstate', onPopState);
+      document.removeEventListener('backbutton', onCordovaBackButton, false);
+      window.removeEventListener('backbutton', onCordovaBackButton, false);
+      capListenerHandle?.remove?.();
       delete window.__handleAndroidBack;
     };
-  }, []);
-
-  // অ্যাপে ঢোকার সময় সংক্ষিপ্ত ও স্মুথ লোগো স্প্ল্যাশ স্ক্রিন
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 550);
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -281,12 +338,10 @@ export default function App() {
   };
 
   const handleTriggerPrint = (report: PrintableReport) => {
-    try {
-      window.history.pushState({ modal: 'print' }, '');
-    } catch {
-      // ignore
-    }
     setPrintReport(report);
+    setTimeout(() => {
+      triggerPrintNative(report);
+    }, 60);
   };
 
   const HOME_CARDS: {
@@ -345,26 +400,6 @@ export default function App() {
 
   return (
     <div className="min-h-dvh bg-[#cbd5e1] flex justify-center selection:bg-[#123e6d] selection:text-white">
-      {/* অ্যাপ লোডিং / স্টার্টআপ স্প্ল্যাশ স্ক্রিন */}
-      {showSplash && (
-        <div className="fixed inset-0 z-50 bg-gradient-to-br from-[#0d2e52] via-[#123e6d] to-[#1b528c] flex flex-col items-center justify-center p-6 text-white select-none animate-out fade-out duration-300 no-print">
-          <div className="w-24 h-24 rounded-[28px] bg-white/15 p-1.5 shadow-2xl border border-white/25 flex items-center justify-center mb-4 animate-in zoom-in-95 duration-200">
-            <img
-              src="/logo.png"
-              alt="হিসাব ক্যালকুলেটর লোগো"
-              className="w-full h-full rounded-[22px] object-cover"
-            />
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight">হিসাব ক্যালকুলেটর</h1>
-          <p className="text-xs font-semibold text-sky-200 mt-1">
-            জমি • নল • মাটি • গাছ ও কাঠের নিখুঁত হিসাব
-          </p>
-          <div className="mt-5 w-28 h-1 rounded-full bg-white/20 overflow-hidden">
-            <div className="h-full w-full bg-amber-400 rounded-full animate-pulse" />
-          </div>
-        </div>
-      )}
-
       {/* ডেডিকেটেড মোবাইল এপিকে শেল (Mobile Frame max-w-[430px]) */}
       <div className="w-full max-w-[430px] min-h-dvh bg-[#f1f5f9] flex flex-col shadow-2xl relative overflow-x-hidden no-print">
         {/* Material Design 3 Top Bar (#123e6d / AMOLED #050a12) */}
