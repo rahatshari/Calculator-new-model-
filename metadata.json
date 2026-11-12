@@ -1,0 +1,6 @@
+{
+  "name": "হিসাব ক্যালকুলেটর",
+  "description": "সম্পূর্ণ অফলাইন প্রস্তুত নিখুঁত জমির হিসাব, নলের হিসাব, মাটির হিসাব এবং গাছ ও কাঠের হিসাব ক্যালকুলেটর।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

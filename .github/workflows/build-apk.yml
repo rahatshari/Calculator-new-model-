@@ -1,0 +1,67 @@
+name: Build Android APK (হিসাব ক্যালকুলেটর)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-apk:
+    name: Build Hisab Calculator APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ১. কোড চেকআউট (Checkout Repository)
+        uses: actions/checkout@v4
+
+      - name: ২. Node.js 22 সেটআপ (Vite 8 ও Capacitor-এর জন্য)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: ৩. Java JDK 21 সেটআপ (Android Gradle-এর জন্য)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: ৪. Android SDK সেটআপ
+        uses: android-actions/setup-android@v3
+
+      - name: ৫. প্রজেক্ট প্যাকেজ ইনস্টল ও ওয়েব বান্ডেল বিল্ড
+        run: |
+          npm install --legacy-peer-deps
+          npm run build
+
+      - name: ৬. Capacitor Android প্রজেক্ট কনফিগার ও সিঙ্ক
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets --no-save --legacy-peer-deps
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: ৭. এআই লোগো দিয়ে Android APK আইকন ও স্প্ল্যাশ স্ক্রিন তৈরি
+        run: |
+          if [ -f "assets/icon.png" ]; then
+            npx capacitor-assets generate --android --iconBackgroundColor '#123e6d' --splashBackgroundColor '#123e6d' || true
+          fi
+
+      - name: ৮. Gradle দিয়ে Android APK তৈরি (Assemble APK)
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../hisab-calculator.apk
+
+      - name: ৯. ডাউনলোডের জন্য APK ফাইল আপলোড (Upload APK Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hisab-Calculator-APK
+          path: hisab-calculator.apk
+          if-no-files-found: error

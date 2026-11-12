@@ -1,0 +1,12 @@
+{
+  "appId": "com.rahatsharif.hisabcalculator",
+  "appName": "হিসাব ক্যালকুলেটর",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#123e6d"
+  }
+}

@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  --app-font: 'Anek Bangla', 'Noto Sans Bengali', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--app-font);
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+}
+
+/* [৭] প্রিন্ট সিস্টেম: প্রিন্ট করার সময় সাদা পেজ রোধ এবং স্পষ্ট কালো টেক্সট ও টেবিল বর্ডার নিশ্চিতকরণ */
+@media print {
+  @page {
+    margin: 12mm;
+    size: A4 portrait;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+    visibility: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1.5px solid #000000 !important;
+    padding: 8px 10px !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    text-align: left !important;
+    font-size: 13pt !important;
+  }
+
+  .print-table th {
+    font-weight: 700 !important;
+    background-color: #f8fafc !important;
+  }
+
+  .print-box {
+    border: 1.5px solid #000000 !important;
+    padding: 12px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin-bottom: 12px !important;
+  }
+}
+
