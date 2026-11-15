@@ -44,14 +44,8 @@ jobs:
         run: |
           BUILD_NUM="${{ github.run_number }}"
           NEW_VERSION="1.0.${BUILD_NUM}"
-          REPO_SLUG="${{ github.repository }}"
           echo "APP_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
           echo "BUILD_NUM=${BUILD_NUM}" >> $GITHUB_ENV
-
-          # নেটিভ build.gradle-এ অটো-ভার্সন ও রিপোজিটরি সেট করা
-          sed -i "s/versionCode [0-9]\+/versionCode ${BUILD_NUM}/g" native-android/app/build.gradle
-          sed -i "s/versionName \"[^\"]*\"/versionName \"${NEW_VERSION}\"/g" native-android/app/build.gradle
-          sed -i "s|buildConfigField \"String\", \"GITHUB_REPO\", \"[^\"]*\"|buildConfigField \"String\", \"GITHUB_REPO\", \"\\\"${REPO_SLUG}\\\"\"|g" native-android/app/build.gradle
 
           # প্রি-জেনারেটেড অ্যাপ লোগো কপি নিশ্চিত করা
           if [ -d "assets/android-res" ]; then

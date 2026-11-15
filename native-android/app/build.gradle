@@ -2,6 +2,10 @@ plugins {
     id 'com.android.application'
 }
 
+def envBuildNum = (System.getenv("BUILD_NUM") ?: "1").toInteger()
+def envVersionName = (System.getenv("APP_VERSION") ?: "1.0.${envBuildNum}").toString()
+def envRepoSlug = (System.getenv("GITHUB_REPOSITORY") ?: "rahatshari/Calculator-new-model-").toString()
+
 android {
     namespace 'com.rahatsharif.hisabcalculator'
     compileSdk 34
@@ -10,10 +14,10 @@ android {
         applicationId "com.rahatsharif.hisabcalculator"
         minSdk 23
         targetSdk 34
-        versionCode 1
-        versionName "1.0.1"
+        versionCode envBuildNum
+        versionName envVersionName
 
-        buildConfigField "String", "GITHUB_REPO", "\"rahatshari/hisab-calculator\""
+        buildConfigField "String", "GITHUB_REPO", "\"${envRepoSlug}\""
     }
 
     buildFeatures {
