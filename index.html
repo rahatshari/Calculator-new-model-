@@ -14,7 +14,42 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="হিসাব" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo-sm.png" />
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('hisab_calculator_settings_v1');
+          if (raw) {
+            var s = JSON.parse(raw);
+            if (s && s.amoledDark) {
+              document.documentElement.classList.add('amoled-dark');
+            }
+            var fonts = {
+              anek: "'Anek Bangla', 'Noto Sans Bengali', sans-serif",
+              noto: "'Noto Sans Bengali', sans-serif",
+              baloo: "'Baloo Da 2', 'Noto Sans Bengali', sans-serif",
+              hind: "'Hind Siliguri', sans-serif",
+              tiro: "'Tiro Bangla', serif"
+            };
+            if (s && s.fontFamily && fonts[s.fontFamily]) {
+              document.documentElement.style.setProperty('--app-font', fonts[s.fontFamily]);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      .boot-shell{min-height:100dvh;display:flex;justify-content:center;background:#cbd5e1}
+      .boot-frame{width:100%;max-width:480px;min-height:100dvh;background:#f1f5f9;display:flex;flex-direction:column}
+      .boot-bar{height:56px;background:#123e6d;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;font-weight:800;font-size:15px}
+      .boot-logo{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.3);object-fit:cover}
+      .boot-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:10px 6px}
+      .boot-card{background:#fff;border:1px solid rgba(226,232,240,.9);border-radius:26px;padding:20px;display:flex;align-items:center;gap:16px;font-weight:800;font-size:18px;color:#0f172a}
+      .boot-ico{width:56px;height:56px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+      html.amoled-dark .boot-shell,html.amoled-dark .boot-frame{background:#000}
+      html.amoled-dark .boot-bar{background:#050a12;border-bottom:1px solid #1e293b}
+      html.amoled-dark .boot-card{background:#0b0c0e;border-color:#1f242d;color:#f8fafc}
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -25,7 +60,22 @@
     />
   </head>
   <body class="bg-[#f1f5f9] text-slate-800 antialiased selection:bg-[#123e6d] selection:text-white">
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-shell" aria-hidden="true">
+        <div class="boot-frame">
+          <div class="boot-bar">
+            <img src="/logo-sm.png" alt="" class="boot-logo" />
+            <span>হিসাব ক্যালকুলেটর</span>
+          </div>
+          <div class="boot-body">
+            <div class="boot-card"><div class="boot-ico" style="background:#d6e3ff">📐</div><span>জমির হিসাব</span></div>
+            <div class="boot-card"><div class="boot-ico" style="background:#d0f4ea">🪵</div><span>নলের হিসাব</span></div>
+            <div class="boot-card"><div class="boot-ico" style="background:#ffdea8">⛰️</div><span>মাটির হিসাব</span></div>
+            <div class="boot-card"><div class="boot-ico" style="background:#ffdcc3">🪵</div><span>গাছ ও কাঠের হিসাব</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

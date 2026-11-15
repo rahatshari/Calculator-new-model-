@@ -12,7 +12,8 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg', 'logo.png'],
+        injectRegister: 'script-defer',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg', 'logo.png', 'logo-sm.png'],
         manifest: {
           id: '/',
           name: 'হিসাব ক্যালকুলেটর',

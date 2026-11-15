@@ -119,7 +119,22 @@ jobs:
             fi
           fi
 
-          # ৩) লোডিং স্ক্রিন ছাড়া সাথে সাথে (0ms Instant Launch) অ্যাপে ঢোকার স্টাইল কনফিগারেশন
+          # ৩) আইকনে ক্লিক করার সাথে সাথেই উইন্ডো ওপেন (0ms Instant Starting Window, windowDisablePreview বন্ধ করা হয়েছে যাতে হোম স্ক্রিনে আটকে না থাকে)
+          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/drawable-night
+          cat > android/app/src/main/res/drawable/launch_bg.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#F1F5F9" />
+          </shape>
+          EOF
+
+          cat > android/app/src/main/res/drawable-night/launch_bg.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#000000" />
+          </shape>
+          EOF
+
           cat > android/app/src/main/res/values/styles.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
@@ -131,14 +146,11 @@ jobs:
               <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
                   <item name="windowActionBar">false</item>
                   <item name="windowNoTitle">true</item>
-                  <item name="android:background">@null</item>
+                  <item name="android:windowBackground">@drawable/launch_bg</item>
                   <item name="android:statusBarColor">#123E6D</item>
-                  <item name="android:windowDisablePreview">true</item>
-                  <item name="android:windowAnimationStyle">@null</item>
               </style>
               <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
-                  <item name="android:windowDisablePreview">true</item>
-                  <item name="android:windowAnimationStyle">@null</item>
+                  <item name="android:windowBackground">@drawable/launch_bg</item>
                   <item name="android:statusBarColor">#123E6D</item>
               </style>
           </resources>
@@ -357,12 +369,16 @@ jobs:
           }
           EOF
 
-      - name: ৮. Gradle দিয়ে APK তৈরি ও স্থায়ী সিগনেচার (Same Signature) দিয়ে সাইন করা
+      - name: ৮. Gradle দিয়ে ফাস্ট Release APK তৈরি ও স্থায়ী সিগনেচার (Same Signature) দিয়ে সাইন করা
         working-directory: ./android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-          RAW_APK="app/build/outputs/apk/debug/app-debug.apk"
+          ./gradlew assembleRelease --no-daemon
+          RAW_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          if [ ! -f "$RAW_APK" ]; then
+            RAW_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          fi
+          echo "Using Release APK: $RAW_APK"
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
           ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name "zipalign" | sort -V | tail -n 1)
 

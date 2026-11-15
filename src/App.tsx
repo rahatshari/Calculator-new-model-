@@ -3,17 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import {
   ChevronRight,
   ClipboardList,
-  Compass,
   Download,
-  Layers,
   Moon,
   Sparkles,
   Sun,
-  Trees,
   X,
 } from 'lucide-react';
 import { toBnNum } from './utils/bengali';
@@ -31,16 +28,31 @@ import {
   saveSettings,
 } from './utils/storage';
 import { usePWAInstall } from './utils/usePWAInstall';
-import { checkGitHubReleaseUpdate, UpdateCheckResult } from './utils/updater';
+import type { UpdateCheckResult } from './utils/updater';
 import { APP_VERSION } from './version';
-import { LandCalculatorView } from './components/LandCalculatorView';
-import { NolCalculatorView } from './components/NolCalculatorView';
-import { SoilCalculatorView } from './components/SoilCalculatorView';
-import { TimberCalculatorView } from './components/TimberCalculatorView';
-import { HistoryView } from './components/HistoryView';
-import { SettingsModal } from './components/SettingsModal';
-import { PrintSheet, PrintableReport } from './components/PrintSheet';
-import { triggerPrintNative } from './utils/nativeBridge';
+import type { PrintableReport } from './components/PrintSheet';
+
+const LandCalculatorView = lazy(() =>
+  import('./components/LandCalculatorView').then((m) => ({ default: m.LandCalculatorView }))
+);
+const NolCalculatorView = lazy(() =>
+  import('./components/NolCalculatorView').then((m) => ({ default: m.NolCalculatorView }))
+);
+const SoilCalculatorView = lazy(() =>
+  import('./components/SoilCalculatorView').then((m) => ({ default: m.SoilCalculatorView }))
+);
+const TimberCalculatorView = lazy(() =>
+  import('./components/TimberCalculatorView').then((m) => ({ default: m.TimberCalculatorView }))
+);
+const HistoryView = lazy(() =>
+  import('./components/HistoryView').then((m) => ({ default: m.HistoryView }))
+);
+const SettingsModal = lazy(() =>
+  import('./components/SettingsModal').then((m) => ({ default: m.SettingsModal }))
+);
+const PrintSheet = lazy(() =>
+  import('./components/PrintSheet').then((m) => ({ default: m.PrintSheet }))
+);
 
 type ScreenView = 'home' | 'land' | 'nol' | 'soil' | 'timber' | 'history';
 
@@ -262,13 +274,23 @@ export default function App() {
     };
   }, []);
 
+  const isFirstHistoryMount = useRef(true);
   useEffect(() => {
+    if (isFirstHistoryMount.current) {
+      isFirstHistoryMount.current = false;
+      return;
+    }
     saveHistory(historyRecords);
   }, [historyRecords]);
 
   // ফন্ট এবং অ্যামোলেড ব্ল্যাক ডার্ক মোড (AMOLED Dark Mode) সিঙ্ক
+  const isFirstSettingsMount = useRef(true);
   useEffect(() => {
-    saveSettings(settings);
+    if (isFirstSettingsMount.current) {
+      isFirstSettingsMount.current = false;
+    } else {
+      saveSettings(settings);
+    }
     const fontKey = settings.fontFamily || 'anek';
     const fontMeta = BENGALI_FONTS[fontKey] || BENGALI_FONTS.anek;
     document.documentElement.style.setProperty('--app-font', fontMeta.cssFamily);
@@ -280,17 +302,34 @@ export default function App() {
     }
   }, [settings]);
 
-  // অ্যাপ ওপেন হলে স্বয়ংক্রিয়ভাবে গিটহাব রিলিজ থেকে নতুন আপডেট চেক করবে
+  // হোম স্ক্রিন রেন্ডার হওয়ার পর ব্যাকগ্রাউন্ডে ক্যালকুলেটর মডিউলগুলো প্রি-লোড করা (যাতে কার্ডে ক্লিক করলে সাথে সাথেই খোলে)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void import('./components/LandCalculatorView');
+      void import('./components/NolCalculatorView');
+      void import('./components/SoilCalculatorView');
+      void import('./components/TimberCalculatorView');
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // অ্যাপ ওপেন হওয়ার ২.৫ সেকেন্ড পর ব্যাকগ্রাউন্ডে গিটহাব রিলিজ থেকে নতুন আপডেট চেক করবে (যাতে লঞ্চ স্পিড না কমে)
   useEffect(() => {
     if (!settings.autoUpdate) return;
     let mounted = true;
-    checkGitHubReleaseUpdate(settings.githubRepo).then((res) => {
-      if (mounted && res.hasUpdate) {
-        setAvailableUpdate(res);
-      }
-    });
+    const timer = window.setTimeout(() => {
+      import('./utils/updater')
+        .then(({ checkGitHubReleaseUpdate }) => checkGitHubReleaseUpdate(settings.githubRepo))
+        .then((res) => {
+          if (mounted && res.hasUpdate) {
+            setAvailableUpdate(res);
+          }
+        })
+        .catch(() => {});
+    }, 2500);
     return () => {
       mounted = false;
+      window.clearTimeout(timer);
     };
   }, [settings.autoUpdate, settings.githubRepo]);
 
@@ -340,7 +379,9 @@ export default function App() {
   const handleTriggerPrint = (report: PrintableReport) => {
     setPrintReport(report);
     setTimeout(() => {
-      triggerPrintNative(report);
+      import('./utils/nativeBridge')
+        .then(({ triggerPrintNative }) => triggerPrintNative(report))
+        .catch(() => {});
     }, 60);
   };
 
@@ -348,7 +389,6 @@ export default function App() {
     id: ScreenView;
     title: string;
     visual: React.ReactNode;
-    icon: React.ReactNode;
     accentBg: string;
     accentText: string;
   }[] = [
@@ -360,7 +400,6 @@ export default function App() {
           📐
         </span>
       ),
-      icon: <Compass className="w-6 h-6 stroke-[2.2]" />,
       accentBg: 'bg-[#d6e3ff]',
       accentText: 'text-[#001b3d]',
     },
@@ -368,7 +407,6 @@ export default function App() {
       id: 'nol',
       title: 'নলের হিসাব',
       visual: <LathiStickIllustration />,
-      icon: <LathiStickIllustration />,
       accentBg: 'bg-[#d0f4ea]',
       accentText: 'text-[#002119]',
     },
@@ -380,7 +418,6 @@ export default function App() {
           ⛰️
         </span>
       ),
-      icon: <Layers className="w-6 h-6 stroke-[2.2]" />,
       accentBg: 'bg-[#ffdea8]',
       accentText: 'text-[#271900]',
     },
@@ -392,7 +429,6 @@ export default function App() {
           🪵
         </span>
       ),
-      icon: <Trees className="w-6 h-6 stroke-[2.2]" />,
       accentBg: 'bg-[#ffdcc3]',
       accentText: 'text-[#2e1500]',
     },
@@ -432,7 +468,7 @@ export default function App() {
             className="flex items-center gap-1.5 cursor-pointer select-none shrink-0"
           >
             <img
-              src="/logo.png"
+              src="/logo-sm.png"
               alt="হিসাব ক্যালকুলেটর লোগো"
               className="w-7 h-7 rounded-lg border border-white/30 shadow-xs object-cover bg-white/10 shrink-0"
             />
@@ -522,53 +558,55 @@ export default function App() {
             </div>
           )}
 
-          {currentView === 'land' && (
-            <LandCalculatorView
-              onBack={handleBackToHome}
-              onSaveHistory={handleSaveHistory}
-              onPrint={handleTriggerPrint}
-              onNotify={showToast}
-            />
-          )}
+          <Suspense fallback={null}>
+            {currentView === 'land' && (
+              <LandCalculatorView
+                onBack={handleBackToHome}
+                onSaveHistory={handleSaveHistory}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
 
-          {currentView === 'nol' && (
-            <NolCalculatorView
-              onBack={handleBackToHome}
-              onSaveHistory={handleSaveHistory}
-              onPrint={handleTriggerPrint}
-              onNotify={showToast}
-            />
-          )}
+            {currentView === 'nol' && (
+              <NolCalculatorView
+                onBack={handleBackToHome}
+                onSaveHistory={handleSaveHistory}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
 
-          {currentView === 'soil' && (
-            <SoilCalculatorView
-              onBack={handleBackToHome}
-              onSaveHistory={handleSaveHistory}
-              onPrint={handleTriggerPrint}
-              onNotify={showToast}
-            />
-          )}
+            {currentView === 'soil' && (
+              <SoilCalculatorView
+                onBack={handleBackToHome}
+                onSaveHistory={handleSaveHistory}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
 
-          {currentView === 'timber' && (
-            <TimberCalculatorView
-              onBack={handleBackToHome}
-              onSaveHistory={handleSaveHistory}
-              onPrint={handleTriggerPrint}
-              onNotify={showToast}
-            />
-          )}
+            {currentView === 'timber' && (
+              <TimberCalculatorView
+                onBack={handleBackToHome}
+                onSaveHistory={handleSaveHistory}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
 
-          {currentView === 'history' && (
-            <HistoryView
-              records={historyRecords}
-              onBack={handleBackToHome}
-              onDelete={handleDeleteHistory}
-              onClearAll={handleClearAllHistory}
-              onUpdateNote={handleUpdateNote}
-              onPrint={handleTriggerPrint}
-              onNotify={showToast}
-            />
-          )}
+            {currentView === 'history' && (
+              <HistoryView
+                records={historyRecords}
+                onBack={handleBackToHome}
+                onDelete={handleDeleteHistory}
+                onClearAll={handleClearAllHistory}
+                onUpdateNote={handleUpdateNote}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
+          </Suspense>
         </main>
 
         {/* ইন-অ্যাপ অটোমেটিক APK আপডেট নোটিফিকেশন ডায়ালগ */}
@@ -578,7 +616,7 @@ export default function App() {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src="/logo.png"
+                    src="/logo-sm.png"
                     alt="লোগো"
                     className="w-11 h-11 rounded-2xl border border-slate-200 shadow-2xs"
                   />
@@ -642,25 +680,33 @@ export default function App() {
         )}
 
         {/* থ্রি-ডট সেটিংস বটম শিট মডাল */}
-        <SettingsModal
-          isOpen={settingsOpen}
-          settings={settings}
-          onClose={() => setSettingsOpen(false)}
-          onUpdateSettings={setSettings}
-          isInstallable={isInstallable}
-          isInstalled={isInstalled}
-          onInstallApp={triggerInstall}
-          availableUpdate={availableUpdate}
-          onUpdateFound={(res) => setAvailableUpdate(res)}
-        />
+        {settingsOpen && (
+          <Suspense fallback={null}>
+            <SettingsModal
+              isOpen={settingsOpen}
+              settings={settings}
+              onClose={() => setSettingsOpen(false)}
+              onUpdateSettings={setSettings}
+              isInstallable={isInstallable}
+              isInstalled={isInstalled}
+              onInstallApp={triggerInstall}
+              availableUpdate={availableUpdate}
+              onUpdateFound={(res) => setAvailableUpdate(res)}
+            />
+          </Suspense>
+        )}
       </div>
 
       {/* প্রিন্ট শিট ও ইন-অ্যাপ প্রিন্ট প্রিভিউ মডাল */}
-      <PrintSheet
-        report={printReport}
-        onClose={() => setPrintReport(null)}
-        onNotify={showToast}
-      />
+      {printReport && (
+        <Suspense fallback={null}>
+          <PrintSheet
+            report={printReport}
+            onClose={() => setPrintReport(null)}
+            onNotify={showToast}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
