@@ -13,7 +13,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { BnInput } from './BnInput';
+import { BnFeetInchInput, BnInput } from './BnInput';
 import { parseBnNum, toBnNum, formatBnCurrency } from '../utils/bengali';
 import {
   calculateRoundLogItem,
@@ -293,50 +293,35 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
       {activeTab === 'round' && (
         <form
           onSubmit={handleAddRoundLog}
-          className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3"
+          className="bg-white rounded-[22px] p-2.5 border border-slate-200/80 shadow-2xs space-y-3"
         >
           <div className="space-y-2.5">
             <div>
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">
-                গাছের গোল বেড় (মাঝখানের মোটা অংশ)
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">
+                গাছের বেড় ও লম্বা (এক ঘরে ফুট ও ইঞ্চি)
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <BnInput
-                  id="round-girth-ft"
-                  label="বেড় (ফুট)"
-                  value={girthFt}
-                  onChange={setGirthFt}
-                  suffix="ফুট"
+              <div className="grid grid-cols-2 gap-1.5">
+                <BnFeetInchInput
+                  idPrefix="round-girth"
+                  label="গোল বেড় (মাঝখান)"
+                  ftValue={girthFt}
+                  inValue={girthIn}
+                  onFtChange={setGirthFt}
+                  onInChange={setGirthIn}
                 />
-                <BnInput
-                  id="round-girth-in"
-                  label="বেড় (ইঞ্চি)"
-                  value={girthIn}
-                  onChange={setGirthIn}
-                  suffix="ইঞ্চি"
+                <BnFeetInchInput
+                  idPrefix="round-len"
+                  label="গাছের লম্বা (দৈর্ঘ্য)"
+                  ftValue={roundLenFt}
+                  inValue={roundLenIn}
+                  onFtChange={setRoundLenFt}
+                  onInChange={setRoundLenIn}
                 />
               </div>
             </div>
 
             <div className="pt-1 border-t border-slate-100">
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">
-                গাছের লম্বা (দৈর্ঘ্য), সংখ্যা ও প্রতি সিএফটি দাম
-              </p>
               <div className="grid grid-cols-2 gap-2">
-                <BnInput
-                  id="round-len-ft"
-                  label="লম্বা (ফুট)"
-                  value={roundLenFt}
-                  onChange={setRoundLenFt}
-                  suffix="ফুট"
-                />
-                <BnInput
-                  id="round-len-in"
-                  label="লম্বা (ইঞ্চি)"
-                  value={roundLenIn}
-                  onChange={setRoundLenIn}
-                  suffix="ইঞ্চি"
-                />
                 <BnInput
                   id="round-qty"
                   label="গাছের সংখ্যা (পিস)"
@@ -355,7 +340,7 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
+          <div className="grid grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               onClick={() => {
@@ -383,12 +368,12 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
       {activeTab === 'sawn' && (
         <form
           onSubmit={handleAddSawnTimber}
-          className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3"
+          className="bg-white rounded-[22px] p-3 border border-slate-200/80 shadow-2xs space-y-3"
         >
           <div className="space-y-2.5">
             <div>
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">
-                সাইজ কাঠের চওড়া ও পুরুত্ব (ইঞ্চি)
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">
+                সাইজ কাঠের চওড়া, পুরুত্ব ও লম্বা
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <BnInput
@@ -408,44 +393,34 @@ export const TimberCalculatorView: React.FC<TimberCalculatorViewProps> = ({
               </div>
             </div>
 
-            <div className="pt-1 border-t border-slate-100">
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">
-                কাঠের লম্বা, সংখ্যা ও প্রতি সিএফটি দাম
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <BnInput
-                  id="sawn-len-ft"
-                  label="লম্বা (ফুট)"
-                  value={sawnLenFt}
-                  onChange={setSawnLenFt}
-                  suffix="ফুট"
-                />
-                <BnInput
-                  id="sawn-len-in"
-                  label="লম্বা (ইঞ্চি)"
-                  value={sawnLenIn}
-                  onChange={setSawnLenIn}
-                  suffix="ইঞ্চি"
-                />
-                <BnInput
-                  id="sawn-qty"
-                  label="কাঠের সংখ্যা (পিস)"
-                  value={sawnQty}
-                  onChange={setSawnQty}
-                  suffix="টি"
-                />
-                <BnInput
-                  id="sawn-rate-cft"
-                  label="প্রতি সিএফটি দাম"
-                  value={ratePerCftInput}
-                  onChange={handleRateChange}
-                  suffix="টাকা"
-                />
-              </div>
+            <BnFeetInchInput
+              idPrefix="sawn-len"
+              label="কাঠের লম্বা (ফুট ও ইঞ্চি)"
+              ftValue={sawnLenFt}
+              inValue={sawnLenIn}
+              onFtChange={setSawnLenFt}
+              onInChange={setSawnLenIn}
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <BnInput
+                id="sawn-qty"
+                label="কাঠের সংখ্যা (পিস)"
+                value={sawnQty}
+                onChange={setSawnQty}
+                suffix="টি"
+              />
+              <BnInput
+                id="sawn-rate-cft"
+                label="প্রতি সিএফটি দাম"
+                value={ratePerCftInput}
+                onChange={handleRateChange}
+                suffix="টাকা"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
+          <div className="grid grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               onClick={() => {

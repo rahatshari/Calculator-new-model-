@@ -11,7 +11,7 @@ import {
   RotateCcw,
   Share2,
 } from 'lucide-react';
-import { BnInput } from './BnInput';
+import { BnFeetInchInput, BnInput } from './BnInput';
 import { parseBnNum, toBnNum, formatBnCurrency } from '../utils/bengali';
 import {
   calculateMultiSoilPit,
@@ -157,8 +157,8 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
     const nextSecond = toBnNum(items.length + 2);
 
     return (
-      <div className="rounded-2xl bg-[#f8fafc] border border-slate-200/70 p-3 space-y-2.5">
-        <div className="flex items-center justify-between gap-2">
+      <div className="rounded-[18px] bg-[#f8fafc] border border-slate-200/70 p-2 space-y-2">
+        <div className="flex items-center justify-between gap-2 px-0.5">
           <span className="text-xs font-extrabold text-[#123e6d]">{title}</span>
           <div className="flex items-center gap-1.5">
             {items.length > 2 && (
@@ -186,26 +186,19 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-1.5">
           {items.map((pair, idx) => {
             const numBn = toBnNum(idx + 1);
             return (
-              <div key={`${idPrefix}-row-${idx}`} className="grid grid-cols-2 gap-2">
-                <BnInput
-                  id={`${idPrefix}-${idx + 1}-ft`}
-                  label={`মাপ ${numBn} (ফুট)`}
-                  value={pair.ft}
-                  onChange={(val) => updatePair(setter, idx, 'ft', val)}
-                  suffix="ফুট"
-                />
-                <BnInput
-                  id={`${idPrefix}-${idx + 1}-in`}
-                  label={`মাপ ${numBn} (ইঞ্চি)`}
-                  value={pair.inch}
-                  onChange={(val) => updatePair(setter, idx, 'inch', val)}
-                  suffix="ইঞ্চি"
-                />
-              </div>
+              <BnFeetInchInput
+                key={`${idPrefix}-row-${idx}`}
+                idPrefix={`${idPrefix}-${idx + 1}`}
+                label={`মাপ ${numBn}`}
+                ftValue={pair.ft}
+                inValue={pair.inch}
+                onFtChange={(val) => updatePair(setter, idx, 'ft', val)}
+                onInChange={(val) => updatePair(setter, idx, 'inch', val)}
+              />
             );
           })}
         </div>
@@ -230,7 +223,7 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
   return (
     <div className="space-y-3">
       {/* মোবাইল সাব-হেডার */}
-      <div className="flex items-center justify-between bg-white rounded-[22px] px-3.5 py-2.5 border border-slate-200/80 shadow-2xs">
+      <div className="flex items-center justify-between bg-white rounded-[22px] px-3 py-2.5 border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -274,7 +267,7 @@ export const SoilCalculatorView: React.FC<SoilCalculatorViewProps> = ({
 
       <form
         onSubmit={handleCalculateSoil}
-        className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3.5"
+        className="bg-white rounded-[22px] p-2 sm:p-2.5 border border-slate-200/80 shadow-2xs space-y-2.5"
       >
         {/* ১. দৈর্ঘ্য (ফুট ও ইঞ্চি) */}
         {renderDimensionSection('দৈর্ঘ্য (ফুট ও ইঞ্চি)', 'soil-l', lengths, setLengths)}

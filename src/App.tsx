@@ -400,8 +400,8 @@ export default function App() {
 
   return (
     <div className="min-h-dvh bg-[#cbd5e1] flex justify-center selection:bg-[#123e6d] selection:text-white">
-      {/* ডেডিকেটেড মোবাইল এপিকে শেল (Mobile Frame max-w-[430px]) */}
-      <div className="w-full max-w-[430px] min-h-dvh bg-[#f1f5f9] flex flex-col shadow-2xl relative overflow-x-hidden no-print">
+      {/* ডেডিকেটেড মোবাইল এপিকে শেল (Mobile Frame max-w-[480px]) */}
+      <div className="w-full max-w-[480px] min-h-dvh bg-[#f1f5f9] flex flex-col shadow-2xl relative overflow-x-hidden no-print">
         {/* Material Design 3 Top Bar (#123e6d / AMOLED #050a12) */}
         <header className="sticky top-0 z-30 bg-[#123e6d] text-white px-2.5 h-14 flex items-center justify-between gap-1.5 shadow-md">
           {/* বাম পাশে আধুনিক চ্যাপ্টা বার (Modern Flat Bars) সেটিংস মেনু আইকন */}
@@ -490,7 +490,7 @@ export default function App() {
         </header>
 
         {/* মেইন মোবাইল স্ক্রিন বডি */}
-        <main className="flex-1 px-3.5 py-4 flex flex-col">
+        <main className="flex-1 px-1.5 sm:px-2.5 py-2.5 flex flex-col">
           {currentView === 'home' && (
             <div className="flex-1 flex flex-col justify-center py-2">
               {/* হোম স্ক্রিনে শুধুমাত্র ৪টি কার্ড (অন্য কোনো বাড়তি লেখা বা বিজ্ঞাপন নেই) */}

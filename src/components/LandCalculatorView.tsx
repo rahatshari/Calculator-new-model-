@@ -13,7 +13,7 @@ import {
   Square,
   Triangle,
 } from 'lucide-react';
-import { BnInput } from './BnInput';
+import { BnFeetInchInput, BnInput } from './BnInput';
 import { parseBnNum, toBnNum } from '../utils/bengali';
 import {
   calculateQuadLand,
@@ -428,32 +428,56 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
 
       {/* ১. চতুর্ভুজ ফর্ম */}
       {activeTab === 'quad' && (
-        <form onSubmit={handleCalculateQuad} className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3">
+        <form onSubmit={handleCalculateQuad} className="bg-white rounded-[22px] p-2.5 border border-slate-200/80 shadow-2xs space-y-3">
           <div className="space-y-2.5">
-            {/* দৈর্ঘ্য */}
+            {/* দৈর্ঘ্য: ১ম ও ২য় পাশের ফুট+ইঞ্চি একত্রে */}
             <div>
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">জমির দৈর্ঘ্য (উত্তর ও দক্ষিণ বাহু)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <BnInput id="quad-n-ft" label="১ম পাশ (ফুট)" value={northFt} onChange={setNorthFt} suffix="ফুট" />
-                <BnInput id="quad-n-in" label="১ম পাশ (ইঞ্চি)" value={northIn} onChange={setNorthIn} suffix="ইঞ্চি" />
-                <BnInput id="quad-s-ft" label="২য় পাশ (ফুট)" value={southFt} onChange={setSouthFt} suffix="ফুট" />
-                <BnInput id="quad-s-in" label="২য় পাশ (ইঞ্চি)" value={southIn} onChange={setSouthIn} suffix="ইঞ্চি" />
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">জমির দৈর্ঘ্য (উত্তর ও দক্ষিণ বাহু)</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <BnFeetInchInput
+                  idPrefix="quad-n"
+                  label="১ম পাশ (দৈর্ঘ্য)"
+                  ftValue={northFt}
+                  inValue={northIn}
+                  onFtChange={setNorthFt}
+                  onInChange={setNorthIn}
+                />
+                <BnFeetInchInput
+                  idPrefix="quad-s"
+                  label="২য় পাশ (দৈর্ঘ্য)"
+                  ftValue={southFt}
+                  inValue={southIn}
+                  onFtChange={setSouthFt}
+                  onInChange={setSouthIn}
+                />
               </div>
             </div>
 
-            {/* প্রস্থ */}
-            <div className="pt-1 border-t border-slate-100">
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-1">জমির প্রস্থ (পূর্ব ও পশ্চিম বাহু)</p>
-              <div className="grid grid-cols-2 gap-2">
-                <BnInput id="quad-e-ft" label="১ম পাশ (ফুট)" value={eastFt} onChange={setEastFt} suffix="ফুট" />
-                <BnInput id="quad-e-in" label="১ম পাশ (ইঞ্চি)" value={eastIn} onChange={setEastIn} suffix="ইঞ্চি" />
-                <BnInput id="quad-w-ft" label="২য় পাশ (ফুট)" value={westFt} onChange={setWestFt} suffix="ফুট" />
-                <BnInput id="quad-w-in" label="২য় পাশ (ইঞ্চি)" value={westIn} onChange={setWestIn} suffix="ইঞ্চি" />
+            {/* প্রস্থ: ১ম ও ২য় পাশের ফুট+ইঞ্চি একত্রে */}
+            <div className="pt-1.5 border-t border-slate-100">
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">জমির প্রস্থ (পূর্ব ও পশ্চিম বাহু)</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                <BnFeetInchInput
+                  idPrefix="quad-e"
+                  label="১ম পাশ (প্রস্থ)"
+                  ftValue={eastFt}
+                  inValue={eastIn}
+                  onFtChange={setEastFt}
+                  onInChange={setEastIn}
+                />
+                <BnFeetInchInput
+                  idPrefix="quad-w"
+                  label="২য় পাশ (প্রস্থ)"
+                  ftValue={westFt}
+                  inValue={westIn}
+                  onFtChange={setWestFt}
+                  onInChange={setWestIn}
+                />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5 pt-1">
+          <div className="grid grid-cols-3 gap-2 pt-1">
             <button
               type="button"
               onClick={handleClearQuad}
@@ -480,22 +504,35 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
 
       {/* ২. ত্রিভুজ ফর্ম */}
       {activeTab === 'heron' && (
-        <form onSubmit={handleCalculateHeron} className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3">
-          <p className="text-xs font-bold text-[#123e6d] px-1">ত্রিভুজাকার জমির ৩টি বাহুর মাপ দিন</p>
+        <form onSubmit={handleCalculateHeron} className="bg-white rounded-[22px] p-2.5 border border-slate-200/80 shadow-2xs space-y-3">
+          <p className="text-xs font-bold text-[#123e6d] px-0.5">ত্রিভুজাকার জমির ৩টি বাহুর মাপ দিন</p>
 
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <BnInput id="heron-a-ft" label="১ম বাহু (ফুট)" value={sideAFt} onChange={setSideAFt} suffix="ফুট" />
-              <BnInput id="heron-a-in" label="১ম বাহু (ইঞ্চি)" value={sideAIn} onChange={setSideAIn} suffix="ইঞ্চি" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <BnInput id="heron-b-ft" label="২য় বাহু (ফুট)" value={sideBFt} onChange={setSideBFt} suffix="ফুট" />
-              <BnInput id="heron-b-in" label="২য় বাহু (ইঞ্চি)" value={sideBIn} onChange={setSideBIn} suffix="ইঞ্চি" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <BnInput id="heron-c-ft" label="৩য় বাহু (ফুট)" value={sideCFt} onChange={setSideCFt} suffix="ফুট" />
-              <BnInput id="heron-c-in" label="৩য় বাহু (ইঞ্চি)" value={sideCIn} onChange={setSideCIn} suffix="ইঞ্চি" />
-            </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <BnFeetInchInput
+              idPrefix="heron-a"
+              label="১ম বাহু"
+              ftValue={sideAFt}
+              inValue={sideAIn}
+              onFtChange={setSideAFt}
+              onInChange={setSideAIn}
+            />
+            <BnFeetInchInput
+              idPrefix="heron-b"
+              label="২য় বাহু"
+              ftValue={sideBFt}
+              inValue={sideBIn}
+              onFtChange={setSideBFt}
+              onInChange={setSideBIn}
+            />
+            <BnFeetInchInput
+              idPrefix="heron-c"
+              label="৩য় বাহু"
+              ftValue={sideCFt}
+              inValue={sideCIn}
+              onFtChange={setSideCFt}
+              onInChange={setSideCIn}
+              className="col-span-2"
+            />
           </div>
 
           {heronError && (
@@ -531,9 +568,9 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
 
       {/* ৩. সীমানা নির্ণয় ফর্ম */}
       {activeTab === 'reverse' && (
-        <form onSubmit={handleCalculateReverse} className="bg-white rounded-[24px] p-4 border border-slate-200/80 shadow-2xs space-y-3">
+        <form onSubmit={handleCalculateReverse} className="bg-white rounded-[22px] p-3 border border-slate-200/80 shadow-2xs space-y-3">
           <div className="space-y-2.5">
-            <p className="text-xs font-bold text-[#123e6d] px-1">কাঙ্ক্ষিত জমির পরিমাণ ও একক</p>
+            <p className="text-xs font-bold text-[#123e6d] px-0.5">কাঙ্ক্ষিত জমির পরিমাণ ও একক</p>
             <div className="grid grid-cols-2 gap-2">
               <BnInput
                 id="rev-land-amount"
@@ -592,11 +629,14 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
               </div>
             </div>
 
-            <p className="text-xs font-bold text-[#123e6d] px-1 pt-1">জানা এক দিকের বাহুর মাপ</p>
-            <div className="grid grid-cols-2 gap-2">
-              <BnInput id="rev-known-ft" label="ফুট" value={knownFt} onChange={setKnownFt} suffix="ফুট" />
-              <BnInput id="rev-known-in" label="ইঞ্চি" value={knownIn} onChange={setKnownIn} suffix="ইঞ্চি" />
-            </div>
+            <BnFeetInchInput
+              idPrefix="rev-known"
+              label="জানা এক দিকের বাহুর মাপ (ফুট ও ইঞ্চি)"
+              ftValue={knownFt}
+              inValue={knownIn}
+              onFtChange={setKnownFt}
+              onInChange={setKnownIn}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-2.5 pt-1">

@@ -69,6 +69,10 @@ html.amoled-dark .bn-input-box:focus-within {
   border-color: #38bdf8 !important;
 }
 
+html.amoled-dark .bn-input-divider {
+  background-color: #2c3444 !important;
+}
+
 /* টেক্সট কালার কন্ট্রাস্ট (AMOLED-এ ঝকঝকে সাদা ও হালকা ধূসর) */
 html.amoled-dark .text-slate-900,
 html.amoled-dark .text-slate-800 {
@@ -92,10 +96,12 @@ html.amoled-dark .text-\[\#001b3d\] {
 
 /* ব্যাজ ও পিল বাটন */
 html.amoled-dark .bg-\[\#d6e3ff\],
+html.amoled-dark .bg-\[\#d6e3ff\]\/75,
 html.amoled-dark .bg-\[\#d6e3ff\]\/70,
+html.amoled-dark .bg-\[\#d6e3ff\]\/40,
 html.amoled-dark .bg-\[\#eef4ff\],
 html.amoled-dark .bg-\[\#eef4ff\]\/60 {
-  background-color: #112240 !important;
+  background-color: #0f1f3d !important;
   border-color: #1e3a8a !important;
   color: #93c5fd !important;
 }
