@@ -1,4 +1,4 @@
-name: Build & Release Android APK (হিসাব ক্যালকুলেটর)
+name: Build & Release Pure Native Android APK (হিসাব ক্যালকুলেটর)
 
 on:
   push:
@@ -10,28 +10,25 @@ on:
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build-android-apk:
-    name: Build & Release Hisab Calculator APK
+    name: Build & Release Native Hisab Calculator APK
     runs-on: ubuntu-latest
 
     steps:
       - name: ১. কোড চেকআউট (Checkout Repository)
         uses: actions/checkout@v4
 
-      - name: ২. Node.js 22 সেটআপ
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: ৩. Java JDK 21 সেটআপ (Android Gradle-এর জন্য)
+      - name: ২. Java JDK 21 সেটআপ (Pure Native Android Build)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: ৩. Gradle 8.9 সেটআপ
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: ৪. Android SDK সেটআপ ও লাইসেন্স অনুমোদন
         run: |
@@ -43,7 +40,7 @@ jobs:
             yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
           fi
 
-      - name: ৫. স্বয়ংক্রিয় ভার্সন বৃদ্ধি (Auto-Increment Version) ও ওয়েব বিল্ড
+      - name: ৫. স্বয়ংক্রিয় ভার্সন বৃদ্ধি, অ্যাপ লোগো ও ৫টি অফলাইন বাংলা ফন্ট সংযুক্তি
         run: |
           BUILD_NUM="${{ github.run_number }}"
           NEW_VERSION="1.0.${BUILD_NUM}"
@@ -51,334 +48,51 @@ jobs:
           echo "APP_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
           echo "BUILD_NUM=${BUILD_NUM}" >> $GITHUB_ENV
 
-          cat > src/version.ts <<EOF
-          export const APP_VERSION = '${NEW_VERSION}';
-          export const APP_BUILD_NUMBER = ${BUILD_NUM};
-          export const GITHUB_REPO = '${REPO_SLUG}';
-          EOF
+          # নেটিভ build.gradle-এ অটো-ভার্সন ও রিপোজিটরি সেট করা
+          sed -i "s/versionCode [0-9]\+/versionCode ${BUILD_NUM}/g" native-android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${NEW_VERSION}\"/g" native-android/app/build.gradle
+          sed -i "s|buildConfigField \"String\", \"GITHUB_REPO\", \"[^\"]*\"|buildConfigField \"String\", \"GITHUB_REPO\", \"\\\"${REPO_SLUG}\\\"\"|g" native-android/app/build.gradle
 
-          node -e '
-            const fs = require("fs");
-            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
-            pkg.version = process.env.NEW_VERSION || "1.0.1";
-            pkg.dependencies = {
-              "lucide-react": "latest",
-              "react": "^19.0.0",
-              "react-dom": "^19.0.0"
-            };
-            pkg.devDependencies = {
-              "@tailwindcss/vite": "latest",
-              "@types/node": "latest",
-              "@types/react": "latest",
-              "@types/react-dom": "latest",
-              "@vitejs/plugin-react": "latest",
-              "tailwindcss": "latest",
-              "typescript": "latest",
-              "vite": "latest",
-              "vite-plugin-pwa": "latest"
-            };
-            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
-          '
-          rm -rf node_modules package-lock.json
-          npm install --legacy-peer-deps
-          npm run build
-
-      - name: ৬. Capacitor Android প্রজেক্ট কনফিগার ও ভার্সন আপডেট
-        run: |
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest @capacitor/app@latest @capacitor/share@latest --no-save --legacy-peer-deps
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
-          npx cap sync android
-
-          if [ -f "android/app/build.gradle" ]; then
-            sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/g" android/app/src/main/build.gradle 2>/dev/null || true
-            sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/g" android/app/build.gradle
-            sed -i "s/versionName \"[^\"]*\"/versionName \"1.0.${{ github.run_number }}\"/g" android/app/build.gradle
-          fi
-
-      - name: ৭. অ্যাপ লোগো, ০-মিলিসেকেন্ড ফাস্ট লঞ্চ এবং নেটিভ প্রিন্ট, শেয়ার ও ব্যাক বাটন সেটআপ
-        run: |
-          # ১) প্রি-জেনারেটেড লোগো কপি করা এবং Capacitor-এর ডিফল্ট অ্যাডাপ্টিভ আইকন ও স্প্ল্যাশ মুছে ফেলা
+          # প্রি-জেনারেটেড অ্যাপ লোগো কপি নিশ্চিত করা
           if [ -d "assets/android-res" ]; then
-            cp -rf assets/android-res/mipmap-* android/app/src/main/res/
+            cp -rf assets/android-res/mipmap-* native-android/app/src/main/res/
           fi
-          rm -rf android/app/src/main/res/mipmap-anydpi-v26
-          rm -f android/app/src/main/res/drawable/ic_launcher_foreground.xml
-          rm -f android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
-          rm -f android/app/src/main/res/drawable/splash.png
-          rm -rf android/app/src/main/res/drawable-port-*
-          rm -rf android/app/src/main/res/drawable-land-*
+          mkdir -p native-android/app/src/main/res/drawable
+          if [ -f "public/logo-sm.png" ]; then
+            cp -f public/logo-sm.png native-android/app/src/main/res/drawable/app_logo_small.png
+          fi
 
-          # ২) Android 13/14/15/16-এ ব্যাক বাটন সরাসরি অ্যাপ বন্ধ হওয়া রোধ করতে AndroidManifest.xml আপডেট
-          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIFEST_FILE" ]; then
-            sed -i 's/android:enableOnBackInvokedCallback="true"/android:enableOnBackInvokedCallback="false"/g' "$MANIFEST_FILE"
-            if ! grep -q "enableOnBackInvokedCallback" "$MANIFEST_FILE"; then
-              sed -i 's/<application/<application android:enableOnBackInvokedCallback="false"/g' "$MANIFEST_FILE"
+          # ৫টি অফলাইন বাংলা ফন্ট APK-এর assets/fonts/-এ ডাউনলোড করা
+          FONT_DIR="native-android/app/src/main/assets/fonts"
+          mkdir -p "$FONT_DIR"
+
+          download_font() {
+            local url="$1"
+            local out="$2"
+            if [ ! -s "$out" ]; then
+              curl -fsSL "$url" -o "$out" || rm -f "$out"
             fi
-          fi
-
-          # ৩) আইকনে ক্লিক করার সাথে সাথেই উইন্ডো ওপেন (0ms Instant Starting Window, windowDisablePreview বন্ধ করা হয়েছে যাতে হোম স্ক্রিনে আটকে না থাকে)
-          mkdir -p android/app/src/main/res/drawable android/app/src/main/res/drawable-night
-          cat > android/app/src/main/res/drawable/launch_bg.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-              <solid android:color="#F1F5F9" />
-          </shape>
-          EOF
-
-          cat > android/app/src/main/res/drawable-night/launch_bg.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-              <solid android:color="#000000" />
-          </shape>
-          EOF
-
-          cat > android/app/src/main/res/values/styles.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-                  <item name="colorPrimary">#123E6D</item>
-                  <item name="colorPrimaryDark">#123E6D</item>
-                  <item name="colorAccent">#123E6D</item>
-              </style>
-              <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
-                  <item name="windowActionBar">false</item>
-                  <item name="windowNoTitle">true</item>
-                  <item name="android:windowBackground">@drawable/launch_bg</item>
-                  <item name="android:statusBarColor">#123E6D</item>
-              </style>
-              <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
-                  <item name="android:windowBackground">@drawable/launch_bg</item>
-                  <item name="android:statusBarColor">#123E6D</item>
-              </style>
-          </resources>
-          EOF
-
-          # ৪) আসল MainActivity.java ফাইল খুঁজে বের করে নেটিভ PrintManager, Share Intent ও ১০০% কার্যকরী Back Button যুক্ত করা
-          MAIN_FILE=$(find android/app/src/main/java -name "MainActivity.java" | head -n 1)
-          if [ -z "$MAIN_FILE" ]; then
-            MAIN_FILE="android/app/src/main/java/com/rahatsharif/hisabcalculator/MainActivity.java"
-            mkdir -p "$(dirname "$MAIN_FILE")"
-            PKG_LINE="package com.rahatsharif.hisabcalculator;"
-          else
-            PKG_LINE=$(grep "^package " "$MAIN_FILE" | head -n 1)
-          fi
-
-          echo "Updating MainActivity at: $MAIN_FILE ($PKG_LINE)"
-
-          cat > "$MAIN_FILE" << EOF
-          $PKG_LINE
-
-          import android.content.Context;
-          import android.content.Intent;
-          import android.os.Bundle;
-          import android.print.PrintAttributes;
-          import android.print.PrintDocumentAdapter;
-          import android.print.PrintManager;
-          import android.view.KeyEvent;
-          import android.webkit.JavascriptInterface;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-          import androidx.activity.OnBackPressedCallback;
-          import com.getcapacitor.BridgeActivity;
-          import com.getcapacitor.Plugin;
-          import com.getcapacitor.PluginCall;
-          import com.getcapacitor.PluginMethod;
-          import com.getcapacitor.annotation.CapacitorPlugin;
-
-          public class MainActivity extends BridgeActivity {
-              private WebView mPrintWebView;
-              private volatile boolean jsCanGoBack = false;
-              private boolean bridgeAttached = false;
-              private OnBackPressedCallback customBackCallback;
-
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  registerPlugin(NativeToolsPlugin.class);
-                  super.onCreate(savedInstanceState);
-                  setupBridgeAndBackHandler();
-              }
-
-              @Override
-              public void onResume() {
-                  super.onResume();
-                  setupBridgeAndBackHandler();
-              }
-
-              private void setupBridgeAndBackHandler() {
-                  if (this.getBridge() != null && this.getBridge().getWebView() != null) {
-                      final WebView webView = this.getBridge().getWebView();
-                      if (!bridgeAttached) {
-                          webView.addJavascriptInterface(new AndroidBridge(this), "AndroidBridge");
-                          bridgeAttached = true;
-                      }
-                  }
-
-                  if (customBackCallback != null) {
-                      customBackCallback.remove();
-                  }
-                  customBackCallback = new OnBackPressedCallback(true) {
-                      @Override
-                      public void handleOnBackPressed() {
-                          handleCustomBackPress();
-                      }
-                  };
-                  getOnBackPressedDispatcher().addCallback(this, customBackCallback);
-              }
-
-              @Override
-              public boolean dispatchKeyEvent(KeyEvent event) {
-                  if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-                      if (event.getAction() == KeyEvent.ACTION_UP && !event.isCanceled()) {
-                          handleCustomBackPress();
-                      }
-                      return true;
-                  }
-                  return super.dispatchKeyEvent(event);
-              }
-
-              @SuppressWarnings("deprecation")
-              @Override
-              public void onBackPressed() {
-                  handleCustomBackPress();
-              }
-
-              public void setJsCanGoBack(boolean canGoBack) {
-                  this.jsCanGoBack = canGoBack;
-              }
-
-              public void handleCustomBackPress() {
-                  runOnUiThread(() -> {
-                      if (getBridge() != null && getBridge().getWebView() != null) {
-                          final WebView webView = getBridge().getWebView();
-                          if (jsCanGoBack) {
-                              jsCanGoBack = false;
-                              webView.evaluateJavascript(
-                                  "if (window.__handleAndroidBack) { window.__handleAndroidBack(); }",
-                                  null
-                              );
-                              return;
-                          }
-                          webView.evaluateJavascript(
-                              "(function(){ return (window.__handleAndroidBack && window.__handleAndroidBack()) ? 'CONSUMED' : 'EXIT'; })()",
-                              value -> {
-                                  if (value == null || !value.contains("CONSUMED")) {
-                                      moveTaskToBack(true);
-                                  }
-                              }
-                          );
-                      } else {
-                          moveTaskToBack(true);
-                      }
-                  });
-              }
-
-              public void executeNativeShare(final String title, final String text) {
-                  runOnUiThread(() -> {
-                      String safeTitle = (title != null && !title.isEmpty()) ? title : "হিসাব ক্যালকুলেটর";
-                      String safeText = (text != null) ? text : "";
-                      Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                      sendIntent.setType("text/plain");
-                      sendIntent.putExtra(Intent.EXTRA_SUBJECT, safeTitle);
-                      sendIntent.putExtra(Intent.EXTRA_TEXT, safeText);
-                      Intent chooser = Intent.createChooser(sendIntent, safeTitle);
-                      startActivity(chooser);
-                  });
-              }
-
-              public void executeNativePrint(final String jobName, final String htmlContent) {
-                  runOnUiThread(() -> {
-                      final String safeJobName = (jobName != null && !jobName.isEmpty()) ? jobName : "Hisab_Calculator_Report";
-                      if (htmlContent != null && !htmlContent.isEmpty()) {
-                          WebView printView = new WebView(MainActivity.this);
-                          mPrintWebView = printView;
-                          printView.setWebViewClient(new WebViewClient() {
-                              @Override
-                              public void onPageFinished(WebView view, String url) {
-                                  PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                                  if (printManager != null) {
-                                      PrintDocumentAdapter adapter = view.createPrintDocumentAdapter(safeJobName);
-                                      printManager.print(safeJobName, adapter, new PrintAttributes.Builder().build());
-                                  }
-                                  mPrintWebView = null;
-                              }
-                          });
-                          printView.loadDataWithBaseURL("https://localhost/", htmlContent, "text/html", "UTF-8", null);
-                      } else if (getBridge() != null && getBridge().getWebView() != null) {
-                          PrintManager printManager = (PrintManager) getSystemService(Context.PRINT_SERVICE);
-                          if (printManager != null) {
-                              PrintDocumentAdapter adapter = getBridge().getWebView().createPrintDocumentAdapter(safeJobName);
-                              printManager.print(safeJobName, adapter, new PrintAttributes.Builder().build());
-                          }
-                      }
-                  });
-              }
-
-              @CapacitorPlugin(name = "NativeTools")
-              public static class NativeToolsPlugin extends Plugin {
-                  @PluginMethod
-                  public void shareText(PluginCall call) {
-                      String title = call.getString("title", "হিসাব ক্যালকুলেটর");
-                      String text = call.getString("text", "");
-                      if (getActivity() instanceof MainActivity) {
-                          ((MainActivity) getActivity()).executeNativeShare(title, text);
-                      }
-                      call.resolve();
-                  }
-
-                  @PluginMethod
-                  public void printPage(PluginCall call) {
-                      String jobName = call.getString("jobName", "Hisab_Calculator_Report");
-                      String htmlContent = call.getString("htmlContent", "");
-                      if (getActivity() instanceof MainActivity) {
-                          ((MainActivity) getActivity()).executeNativePrint(jobName, htmlContent);
-                      }
-                      call.resolve();
-                  }
-              }
-
-              public static class AndroidBridge {
-                  private final MainActivity activity;
-
-                  public AndroidBridge(MainActivity activity) {
-                      this.activity = activity;
-                  }
-
-                  @JavascriptInterface
-                  public void setCanGoBack(final boolean canGoBack) {
-                      activity.setJsCanGoBack(canGoBack);
-                  }
-
-                  @JavascriptInterface
-                  public void shareText(final String title, final String text) {
-                      activity.executeNativeShare(title, text);
-                  }
-
-                  @JavascriptInterface
-                  public void printPage(final String jobName) {
-                      activity.executeNativePrint(jobName, null);
-                  }
-
-                  @JavascriptInterface
-                  public void printHtml(final String jobName, final String htmlContent) {
-                      activity.executeNativePrint(jobName, htmlContent);
-                  }
-              }
           }
-          EOF
 
-      - name: ৮. Gradle দিয়ে ফাস্ট Release APK তৈরি ও স্থায়ী সিগনেচার (Same Signature) দিয়ে সাইন করা
-        working-directory: ./android
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/anekbangla/AnekBangla%5Bwdth%2Cwght%5D.ttf" "$FONT_DIR/AnekBangla.ttf"
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansbengali/NotoSansBengali%5Bwdth%2Cwght%5D.ttf" "$FONT_DIR/NotoSansBengali.ttf"
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/balooda2/BalooDa2%5Bwght%5D.ttf" "$FONT_DIR/BalooDa2.ttf"
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/hindsiliguri/HindSiliguri-Regular.ttf" "$FONT_DIR/HindSiliguri-Regular.ttf"
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/hindsiliguri/HindSiliguri-Bold.ttf" "$FONT_DIR/HindSiliguri-Bold.ttf"
+          download_font "https://raw.githubusercontent.com/google/fonts/main/ofl/tirobangla/TiroBangla-Regular.ttf" "$FONT_DIR/TiroBangla-Regular.ttf"
+
+          ls -lh "$FONT_DIR"
+
+      - name: ৬. Pure Native Release APK তৈরি ও স্থায়ী সিগনেচার (Same Signature) দিয়ে সাইন করা
+        working-directory: ./native-android
         run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          gradle assembleRelease --no-daemon
           RAW_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ ! -f "$RAW_APK" ]; then
             RAW_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
           fi
           echo "Using Release APK: $RAW_APK"
+
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name "apksigner" | sort -V | tail -n 1)
           ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name "zipalign" | sort -V | tail -n 1)
 
@@ -399,20 +113,20 @@ jobs:
             cp "$RAW_APK" ../hisab-calculator.apk
           fi
 
-      - name: ৯. ডাউনলোডের জন্য APK ফাইল আপলোড (Upload APK Artifact)
+      - name: ৭. ডাউনলোডের জন্য APK ফাইল আপলোড (Upload APK Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: Hisab-Calculator-APK-v1.0.${{ github.run_number }}
+          name: Hisab-Calculator-Native-APK-v1.0.${{ github.run_number }}
           path: hisab-calculator.apk
           if-no-files-found: error
 
-      - name: ১০. GitHub Releases-এ স্বয়ংক্রিয়ভাবে নতুন APK প্রকাশ (Auto Release)
+      - name: ৮. GitHub Releases-এ স্বয়ংক্রিয়ভাবে নতুন APK প্রকাশ (Auto Release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v1.0.${{ github.run_number }}"
-          TITLE="হিসাব ক্যালকুলেটর v1.0.${{ github.run_number }}"
-          NOTES="🚀 **হিসাব ক্যালকুলেটর স্বয়ংক্রিয় রিলিজ (সংস্করণ: v1.0.${{ github.run_number }}, বিল্ড: #${{ github.run_number }})**\n\n- ✅ স্থায়ী সিগনেচার (Same Signature Key) দিয়ে সাইন করা—পুরাতন অ্যাপ আনইনস্টল না করেই সরাসরি আপডেট করা যাবে।\n- ✅ অ্যাপের ভেতর থেকে স্বয়ংক্রিয় আপডেট নোটিফিকেশন ও ১-ক্লিকে ডাউনলোড সাপোর্ট।"
+          TITLE="হিসাব ক্যালকুলেটর v1.0.${{ github.run_number }} (Pure Native)"
+          NOTES="🚀 **হিসাব ক্যালকুলেটর পিওর নেটিভ অ্যান্ড্রয়েড রিলিজ (সংস্করণ: v1.0.${{ github.run_number }}, বিল্ড: #${{ github.run_number }})**\n\n- ⚡ **০-মিলিসেকেন্ড ফাস্ট ওপেন:** সম্পূর্ণ নেটিভ Java ও Android Views দিয়ে তৈরি—আইকনে ক্লিক করার সাথে সাথেই ওপেন হবে।\n- 🌙 **AMOLED ব্ল্যাক ডার্ক মোড ও ৫টি অফলাইন বাংলা ফন্ট।**\n- ✅ **স্থায়ী সিগনেচার (Same Signature Key):** পুরোনো অ্যাপ আনইনস্টল না করেই সরাসরি আপডেট করা যাবে।"
           gh release create "$TAG" hisab-calculator.apk \
             --title "$TITLE" \
             --notes "$NOTES" \
