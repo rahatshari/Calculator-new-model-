@@ -88,6 +88,7 @@ public class NolCalculatorView {
             tv.setTextSize(12);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setTextColor(p.textBlueAccent);
+            tv.setGravity(android.view.Gravity.CENTER);
             container.addView(tv);
 
             LinearLayout row = new LinearLayout(ctx);

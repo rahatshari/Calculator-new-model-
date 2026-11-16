@@ -114,6 +114,7 @@ public class LandCalculatorView {
         lblLen.setTextSize(12);
         lblLen.setTypeface(null, Typeface.BOLD);
         lblLen.setTextColor(p.textBlueAccent);
+        lblLen.setGravity(Gravity.CENTER);
         form.addView(lblLen);
 
         LinearLayout lenRow = new LinearLayout(ctx);
@@ -140,6 +141,7 @@ public class LandCalculatorView {
         lblWid.setTextSize(12);
         lblWid.setTypeface(null, Typeface.BOLD);
         lblWid.setTextColor(p.textBlueAccent);
+        lblWid.setGravity(Gravity.CENTER);
         form.addView(lblWid);
 
         LinearLayout widRow = new LinearLayout(ctx);
@@ -197,6 +199,7 @@ public class LandCalculatorView {
         lbl.setTextSize(12);
         lbl.setTypeface(null, Typeface.BOLD);
         lbl.setTextColor(p.textBlueAccent);
+        lbl.setGravity(Gravity.CENTER);
         form.addView(lbl);
 
         LinearLayout row1 = new LinearLayout(ctx);
@@ -273,6 +276,7 @@ public class LandCalculatorView {
         lbl.setTextSize(12);
         lbl.setTypeface(null, Typeface.BOLD);
         lbl.setTextColor(p.textBlueAccent);
+        lbl.setGravity(Gravity.CENTER);
         form.addView(lbl);
 
         LinearLayout row = new LinearLayout(ctx);
@@ -292,6 +296,7 @@ public class LandCalculatorView {
         uLbl.setTextSize(11);
         uLbl.setTypeface(null, Typeface.BOLD);
         uLbl.setTextColor(p.textMuted);
+        uLbl.setGravity(Gravity.CENTER);
         unitBox.addView(uLbl);
 
         TextView uVal = new TextView(ctx);
@@ -299,6 +304,7 @@ public class LandCalculatorView {
         uVal.setTextSize(13.5f);
         uVal.setTypeface(null, Typeface.BOLD);
         uVal.setTextColor(p.textBlueAccent);
+        uVal.setGravity(Gravity.CENTER);
         uVal.setSingleLine(true);
         LinearLayout.LayoutParams ulp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         ulp.topMargin = ThemeManager.dp(ctx, 4);

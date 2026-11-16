@@ -67,7 +67,7 @@ export const BnInput: React.FC<BnInputProps> = ({
       >
         <label
           htmlFor={inputId}
-          className="text-[11px] font-semibold text-slate-500 leading-tight select-none"
+          className={`text-[11px] font-semibold text-slate-500 leading-tight select-none ${!suffix ? 'text-center' : ''}`}
         >
           {label}
         </label>
@@ -80,8 +80,8 @@ export const BnInput: React.FC<BnInputProps> = ({
             onChange={handleChange}
             placeholder={placeholder}
             className={`w-full bg-transparent font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none ${
-              compact ? 'text-sm' : 'text-base'
-            }`}
+              !suffix ? 'text-center' : ''
+            } ${compact ? 'text-sm' : 'text-base'}`}
           />
           {suffix && (
             <span className="pointer-events-none shrink-0 text-[11px] font-bold text-[#123e6d] bg-[#d6e3ff]/70 px-2 py-0.5 rounded-full">
@@ -107,7 +107,7 @@ interface BnFeetInchInputProps {
 }
 
 /**
- * এক ঘরের ভেতরেই পাশাপাশি 'ফুট' ও 'ইঞ্চি' ইনপুট নেওয়ার বড় ও প্রশস্ত বক্স (উপরে স্পষ্ট ফুট ও ইঞ্চি লেবেলসহ)
+ * এক ঘরের ভেতরেই পাশাপাশি 'ফুট' ও 'ইঞ্চি' ইনপুট নেওয়ার বড় ও প্রশস্ত বক্স (সব লেখা ও সংখ্যা মাঝ বরাবর)
  */
 export const BnFeetInchInput: React.FC<BnFeetInchInputProps> = ({
   idPrefix,
@@ -126,15 +126,15 @@ export const BnFeetInchInput: React.FC<BnFeetInchInputProps> = ({
   return (
     <div className={`flex flex-col ${className}`}>
       <div className="bn-input-box relative flex flex-col justify-center rounded-2xl bg-[#f1f5f9] border border-slate-200/90 focus-within:bg-white focus-within:border-[#123e6d] focus-within:ring-2 focus-within:ring-[#123e6d]/15 px-3 py-2.5 transition-all">
-        <span className="text-[11.5px] font-extrabold text-[#123e6d] leading-tight select-none mb-1.5 truncate">
+        <span className="text-[11.5px] font-extrabold text-[#123e6d] leading-tight select-none mb-1.5 truncate text-center">
           {label}
         </span>
         <div className="grid grid-cols-[1fr_1px_1fr] items-stretch gap-2">
           <label
             htmlFor={ftId}
-            className="flex flex-col cursor-text min-w-0"
+            className="flex flex-col items-center cursor-text min-w-0"
           >
-            <span className="text-[11px] font-bold text-slate-500 leading-none mb-1 select-none">
+            <span className="text-[11px] font-bold text-slate-500 leading-none mb-1 select-none text-center">
               ফুট
             </span>
             <input
@@ -145,7 +145,7 @@ export const BnFeetInchInput: React.FC<BnFeetInchInputProps> = ({
               value={ftValue}
               onChange={(e) => onFtChange(normalizeToBnInput(e.target.value))}
               placeholder={ftPlaceholder}
-              className="w-full min-w-0 bg-transparent text-lg font-extrabold text-slate-900 placeholder:text-slate-400 focus:outline-none tabular-nums leading-tight"
+              className="w-full min-w-0 bg-transparent text-lg font-extrabold text-slate-900 placeholder:text-slate-400 focus:outline-none tabular-nums leading-tight text-center"
             />
           </label>
 
@@ -156,9 +156,9 @@ export const BnFeetInchInput: React.FC<BnFeetInchInputProps> = ({
 
           <label
             htmlFor={inId}
-            className="flex flex-col cursor-text min-w-0 pl-0.5"
+            className="flex flex-col items-center cursor-text min-w-0"
           >
-            <span className="text-[11px] font-bold text-slate-500 leading-none mb-1 select-none">
+            <span className="text-[11px] font-bold text-slate-500 leading-none mb-1 select-none text-center">
               ইঞ্চি
             </span>
             <input
@@ -169,7 +169,7 @@ export const BnFeetInchInput: React.FC<BnFeetInchInputProps> = ({
               value={inValue}
               onChange={(e) => onInChange(normalizeToBnInput(e.target.value))}
               placeholder={inPlaceholder}
-              className="w-full min-w-0 bg-transparent text-lg font-extrabold text-slate-900 placeholder:text-slate-400 focus:outline-none tabular-nums leading-tight"
+              className="w-full min-w-0 bg-transparent text-lg font-extrabold text-slate-900 placeholder:text-slate-400 focus:outline-none tabular-nums leading-tight text-center"
             />
           </label>
         </div>

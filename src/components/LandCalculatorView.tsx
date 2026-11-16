@@ -432,7 +432,7 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
           <div className="space-y-2.5">
             {/* দৈর্ঘ্য: ১ম ও ২য় পাশের ফুট+ইঞ্চি একত্রে */}
             <div>
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">জমির দৈর্ঘ্য (উত্তর ও দক্ষিণ বাহু)</p>
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5 text-center">জমির দৈর্ঘ্য (উত্তর ও দক্ষিণ বাহু)</p>
               <div className="grid grid-cols-2 gap-1.5">
                 <BnFeetInchInput
                   idPrefix="quad-n"
@@ -455,7 +455,7 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
 
             {/* প্রস্থ: ১ম ও ২য় পাশের ফুট+ইঞ্চি একত্রে */}
             <div className="pt-1.5 border-t border-slate-100">
-              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5">জমির প্রস্থ (পূর্ব ও পশ্চিম বাহু)</p>
+              <p className="text-xs font-bold text-[#123e6d] mb-1.5 px-0.5 text-center">জমির প্রস্থ (পূর্ব ও পশ্চিম বাহু)</p>
               <div className="grid grid-cols-2 gap-1.5">
                 <BnFeetInchInput
                   idPrefix="quad-e"
@@ -505,7 +505,7 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
       {/* ২. ত্রিভুজ ফর্ম */}
       {activeTab === 'heron' && (
         <form onSubmit={handleCalculateHeron} className="bg-white rounded-[22px] p-2.5 border border-slate-200/80 shadow-2xs space-y-3">
-          <p className="text-xs font-bold text-[#123e6d] px-0.5">ত্রিভুজাকার জমির ৩টি বাহুর মাপ দিন</p>
+          <p className="text-xs font-bold text-[#123e6d] px-0.5 text-center">ত্রিভুজাকার জমির ৩টি বাহুর মাপ দিন</p>
 
           <div className="grid grid-cols-2 gap-1.5">
             <BnFeetInchInput
@@ -570,7 +570,7 @@ export const LandCalculatorView: React.FC<LandCalculatorViewProps> = ({
       {activeTab === 'reverse' && (
         <form onSubmit={handleCalculateReverse} className="bg-white rounded-[22px] p-3 border border-slate-200/80 shadow-2xs space-y-3">
           <div className="space-y-2.5">
-            <p className="text-xs font-bold text-[#123e6d] px-0.5">কাঙ্ক্ষিত জমির পরিমাণ ও একক</p>
+            <p className="text-xs font-bold text-[#123e6d] px-0.5 text-center">কাঙ্ক্ষিত জমির পরিমাণ ও একক</p>
             <div className="grid grid-cols-2 gap-2">
               <BnInput
                 id="rev-land-amount"

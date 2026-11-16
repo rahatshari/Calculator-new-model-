@@ -71,11 +71,14 @@ public final class BnUi {
             box.setPadding(px, py, px, py);
             box.setBackground(ThemeManager.roundRect(ctx, p.bgInput, 16, p.borderInput, 1));
 
+            boolean hasSuffix = (suffix != null && !suffix.isEmpty());
+
             labelView = new TextView(ctx);
             labelView.setText(label);
             labelView.setTextSize(11);
             labelView.setTypeface(null, Typeface.BOLD);
             labelView.setTextColor(p.textMuted);
+            if (!hasSuffix) labelView.setGravity(Gravity.CENTER);
             box.addView(labelView);
 
             LinearLayout row = new LinearLayout(ctx);
@@ -94,10 +97,11 @@ public final class BnUi {
             editText.setHintTextColor(p.textMuted);
             editText.setTextSize(compact ? 14 : 16);
             editText.setTypeface(null, Typeface.BOLD);
+            if (!hasSuffix) editText.setGravity(Gravity.CENTER);
             LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
             row.addView(editText, elp);
 
-            if (suffix != null && !suffix.isEmpty()) {
+            if (hasSuffix) {
                 suffixView = new TextView(ctx);
                 suffixView.setText(suffix);
                 suffixView.setTextSize(11);
@@ -169,6 +173,7 @@ public final class BnUi {
             tvTitle.setTextSize(11.5f);
             tvTitle.setTypeface(null, Typeface.BOLD);
             tvTitle.setTextColor(p.textBlueAccent);
+            tvTitle.setGravity(Gravity.CENTER);
             tvTitle.setSingleLine(true);
             LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -186,12 +191,16 @@ public final class BnUi {
             // Left: ফুট
             LinearLayout ftCol = new LinearLayout(ctx);
             ftCol.setOrientation(LinearLayout.VERTICAL);
+            ftCol.setGravity(Gravity.CENTER_HORIZONTAL);
             TextView ftLbl = new TextView(ctx);
             ftLbl.setText("ফুট");
             ftLbl.setTextSize(11);
             ftLbl.setTypeface(null, Typeface.BOLD);
             ftLbl.setTextColor(p.textMuted);
-            ftCol.addView(ftLbl);
+            ftLbl.setGravity(Gravity.CENTER);
+            ftCol.addView(ftLbl, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
 
             ftEdit = new EditText(ctx);
             configureBnNumberEdit(ftEdit);
@@ -200,6 +209,7 @@ public final class BnUi {
             ftEdit.setHintTextColor(p.textMuted);
             ftEdit.setTextSize(18);
             ftEdit.setTypeface(null, Typeface.BOLD);
+            ftEdit.setGravity(Gravity.CENTER);
             LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             );
@@ -208,23 +218,27 @@ public final class BnUi {
             ftCol.setOnClickListener(v -> ftEdit.requestFocus());
             splitRow.addView(ftCol, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
-            // Vertical divider
+            // Vertical divider (dead center)
             View div = new View(ctx);
             div.setBackgroundColor(p.divider);
             LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(ThemeManager.dp(ctx, 1), ThemeManager.dp(ctx, 34));
             dlp.leftMargin = ThemeManager.dp(ctx, 8);
-            dlp.rightMargin = ThemeManager.dp(ctx, 10);
+            dlp.rightMargin = ThemeManager.dp(ctx, 8);
             splitRow.addView(div, dlp);
 
             // Right: ইঞ্চি
             LinearLayout inCol = new LinearLayout(ctx);
             inCol.setOrientation(LinearLayout.VERTICAL);
+            inCol.setGravity(Gravity.CENTER_HORIZONTAL);
             TextView inLbl = new TextView(ctx);
             inLbl.setText("ইঞ্চি");
             inLbl.setTextSize(11);
             inLbl.setTypeface(null, Typeface.BOLD);
             inLbl.setTextColor(p.textMuted);
-            inCol.addView(inLbl);
+            inLbl.setGravity(Gravity.CENTER);
+            inCol.addView(inLbl, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
 
             inEdit = new EditText(ctx);
             configureBnNumberEdit(inEdit);
@@ -233,6 +247,7 @@ public final class BnUi {
             inEdit.setHintTextColor(p.textMuted);
             inEdit.setTextSize(18);
             inEdit.setTypeface(null, Typeface.BOLD);
+            inEdit.setGravity(Gravity.CENTER);
             LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             );

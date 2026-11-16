@@ -107,6 +107,7 @@ public class TimberCalculatorView {
         lbl.setTextSize(12);
         lbl.setTypeface(null, Typeface.BOLD);
         lbl.setTextColor(p.textBlueAccent);
+        lbl.setGravity(Gravity.CENTER);
         form.addView(lbl);
 
         LinearLayout dimRow = new LinearLayout(ctx);
@@ -175,6 +176,7 @@ public class TimberCalculatorView {
         lbl.setTextSize(12);
         lbl.setTypeface(null, Typeface.BOLD);
         lbl.setTextColor(p.textBlueAccent);
+        lbl.setGravity(Gravity.CENTER);
         form.addView(lbl);
 
         LinearLayout wtRow = new LinearLayout(ctx);
