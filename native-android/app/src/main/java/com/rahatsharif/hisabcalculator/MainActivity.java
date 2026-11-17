@@ -33,6 +33,7 @@ import com.rahatsharif.hisabcalculator.ui.NolCalculatorView;
 import com.rahatsharif.hisabcalculator.ui.SettingsDialog;
 import com.rahatsharif.hisabcalculator.ui.SoilCalculatorView;
 import com.rahatsharif.hisabcalculator.ui.TimberCalculatorView;
+import com.rahatsharif.hisabcalculator.ui.UnitConverterView;
 import com.rahatsharif.hisabcalculator.util.BnFormat;
 import com.rahatsharif.hisabcalculator.util.NativeTools;
 import com.rahatsharif.hisabcalculator.util.NativeTools.PrintableReport;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements AppHost {
     private NolCalculatorView nolView;
     private SoilCalculatorView soilView;
     private TimberCalculatorView timberView;
+    private UnitConverterView converterView;
     private HistoryView historyView;
     private SettingsDialog activeSettingsDialog;
 
@@ -332,6 +334,10 @@ public class MainActivity extends AppCompatActivity implements AppHost {
             case "timber":
                 if (timberView == null) timberView = new TimberCalculatorView(this);
                 target = timberView.build();
+                break;
+            case "converter":
+                if (converterView == null) converterView = new UnitConverterView(this);
+                target = converterView.build();
                 break;
             case "history":
                 if (historyView == null) historyView = new HistoryView(this);

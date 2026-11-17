@@ -32,6 +32,7 @@ const FILTER_TABS: { id: 'all' | CalculatorCategory; label: string }[] = [
   { id: 'nol', label: 'নল' },
   { id: 'soil', label: 'মাটি' },
   { id: 'timber', label: 'কাঠ' },
+  { id: 'converter', label: 'একক' },
 ];
 
 export const HistoryView: React.FC<HistoryViewProps> = ({
@@ -154,13 +155,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-5 gap-1 bg-[#f1f5f9] p-1 rounded-full">
+        <div className="grid grid-cols-6 gap-1 bg-[#f1f5f9] p-1 rounded-full">
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setSelectedCategory(tab.id)}
-              className={`h-8 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`h-8 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                 selectedCategory === tab.id
                   ? 'bg-[#123e6d] text-white shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -190,7 +191,13 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#d6e3ff] text-[#001b3d]">
+                    <span
+                      className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                        rec.category === 'converter'
+                          ? 'bg-[#ccfbf1] text-[#115e59]'
+                          : 'bg-[#d6e3ff] text-[#001b3d]'
+                      }`}
+                    >
                       {rec.categoryLabel}
                     </span>
                     <span className="text-xs font-bold text-slate-700">{rec.subTypeLabel}</span>

@@ -2,12 +2,12 @@ import { getBnDateTime, toBnNum } from './bengali';
 import { TimberItem } from './calculators';
 import { APP_VERSION, GITHUB_REPO } from '../version';
 
-export type CalculatorCategory = 'land' | 'nol' | 'soil' | 'timber';
+export type CalculatorCategory = 'land' | 'nol' | 'soil' | 'timber' | 'converter';
 
 export interface HistoryRecord {
   id: string;
   category: CalculatorCategory;
-  categoryLabel: string; // 'জমির হিসাব' | 'নলের হিসাব' | 'মাটির হিসাব' | 'গাছ ও কাঠের হিসাব'
+  categoryLabel: string; // 'জমির হিসাব' | 'নলের হিসাব' | 'মাটির হিসাব' | 'গাছ ও কাঠের হিসাব' | 'একক পরিবর্তন'
   subTypeLabel: string;
   timestamp: string;     // বাংলা তারিখ ও সময়
   createdAt: number;

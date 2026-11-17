@@ -45,6 +45,10 @@ public class HomeView {
             p.isDark ? Color.parseColor("#381A05") : Color.parseColor("#FFDCC3"),
             p.isDark ? Color.parseColor("#FDBA74") : Color.parseColor("#2E1500"), 14));
 
+        root.addView(makeCard(ctx, p, "converter", "একক পরিবর্তন", "📏", false,
+            p.isDark ? Color.parseColor("#042F2E") : Color.parseColor("#CCFBF1"),
+            p.isDark ? Color.parseColor("#5EEAD4") : Color.parseColor("#115E59"), 14));
+
         return root;
     }
 

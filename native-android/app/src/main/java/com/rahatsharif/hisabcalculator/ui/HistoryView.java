@@ -174,7 +174,8 @@ public class HistoryView {
             {"land", "জমির হিসাব"},
             {"nol", "নলের হিসাব"},
             {"soil", "মাটির হিসাব"},
-            {"timber", "গাছ ও কাঠ"}
+            {"timber", "গাছ ও কাঠ"},
+            {"converter", "একক পরিবর্তন"}
         };
 
         for (int i = 0; i < cats.length; i++) {
@@ -269,6 +270,9 @@ public class HistoryView {
             } else if ("timber".equals(rec.category)) {
                 badgeBg = p.isDark ? Color.parseColor("#381A05") : Color.parseColor("#FFDCC3");
                 badgeTxt = p.isDark ? Color.parseColor("#FDBA74") : Color.parseColor("#7C2D12");
+            } else if ("converter".equals(rec.category)) {
+                badgeBg = p.isDark ? Color.parseColor("#042F2E") : Color.parseColor("#CCFBF1");
+                badgeTxt = p.isDark ? Color.parseColor("#5EEAD4") : Color.parseColor("#115E59");
             } else {
                 badgeBg = p.softBlueBg;
                 badgeTxt = p.softBlueText;

@@ -12,6 +12,10 @@ import {
   calculateMultiSoilPit,
   calculateRoundTimberCft,
   calculateFlatTimberCft,
+  LENGTH_UNITS,
+  AREA_UNITS,
+  convertLengthUnits,
+  convertAreaUnits,
 } from './calculators';
 
 test('Bengali numeral conversion, Angul formatting without decimals, and parsing works accurately', () => {
@@ -132,3 +136,53 @@ test('Timber CFT calculator: Hoppus Rule (round) and Size/Flat timber', () => {
   assert.ok(Math.abs(flat.cft - 12) < 0.001);
   assert.ok(Math.abs(flat.totalPrice - 18000) < 0.01);
 });
+
+test('Unit converter: all 10 length units and 14 area units convert accurately', () => {
+  assert.equal(LENGTH_UNITS.length, 10);
+  assert.equal(AREA_UNITS.length, 14);
+
+  // Empty / zero input defaults cleanly
+  const zeroLen = convertLengthUnits(0, 'ft');
+  assert.equal(zeroLen[0].formatted, '০.০০');
+  assert.equal(zeroLen[8].formatted, '০.০০০০'); // km minDec=4
+
+  // 100 ft -> 1200 inch, 30.48 m, 66.6667 hat, 33.3333 gaj
+  const fromFt = convertLengthUnits(100, 'ft');
+  const byKeyLen = Object.fromEntries(fromFt.map((r) => [r.key, r]));
+  assert.ok(Math.abs(byKeyLen.inch.value - 1200) < 1e-6);
+  assert.ok(Math.abs(byKeyLen.meter.value - 30.48) < 1e-6);
+  assert.ok(Math.abs(byKeyLen.hat.value - (100 / 1.5)) < 1e-6);
+  assert.ok(Math.abs(byKeyLen.gaj.value - (100 / 3)) < 1e-6);
+  assert.ok(Math.abs(byKeyLen.cm.value - 3048) < 1e-6);
+  assert.ok(Math.abs(byKeyLen.mm.value - 30480) < 1e-6);
+
+  // 100 link = 66 ft (Gunter chain)
+  const fromLink = convertLengthUnits(100, 'link');
+  assert.ok(Math.abs(fromLink[0].value - 66) < 1e-6);
+  assert.equal(fromLink.find((r) => r.key === 'link')?.isSource, true);
+
+  // 1 mile = 5280 ft
+  const fromMile = convertLengthUnits(1, 'mile');
+  assert.ok(Math.abs(fromMile[0].value - 5280) < 1e-6);
+
+  // Area: 1 shotok = 435.6 sq ft = 100 ojutangsho = 1000 sqlink = 0.5 gonda = 2 kora = 0.01 acre
+  const fromShotok = convertAreaUnits(1, 'shotok');
+  const byKeyArea = Object.fromEntries(fromShotok.map((r) => [r.key, r]));
+  assert.ok(Math.abs(byKeyArea.sqft.value - 435.6) < 1e-6);
+  assert.ok(Math.abs(byKeyArea.ojutangsho.value - 100) < 1e-6);
+  assert.ok(Math.abs(byKeyArea.sqlink.value - 1000) < 1e-6);
+  assert.ok(Math.abs(byKeyArea.gonda.value - 0.5) < 1e-6);
+  assert.ok(Math.abs(byKeyArea.kora.value - 2) < 1e-6);
+  assert.ok(Math.abs(byKeyArea.acre.value - 0.01) < 1e-6);
+
+  // 1 kani = 40 shotok = 17424 sq ft; 1 bigha = 20 katha = 14400 sq ft; 1 hectare = 10000 sq meter
+  const fromKani = convertAreaUnits(1, 'kani');
+  assert.ok(Math.abs(fromKani.find((r) => r.key === 'shotok')!.value - 40) < 1e-6);
+
+  const fromHectare = convertAreaUnits(1, 'hectare');
+  assert.ok(Math.abs(fromHectare.find((r) => r.key === 'sqmeter')!.value - 10000) < 1e-6);
+
+  const fromSqHat = convertAreaUnits(1, 'sqgaj');
+  assert.ok(Math.abs(fromSqHat.find((r) => r.key === 'sqhat')!.value - 4) < 1e-6);
+});
+

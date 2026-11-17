@@ -1,4 +1,4 @@
-import { feetInchesToFeet, sqFtToTraditionalUnits, toBnAngul, toBnNum, TraditionalUnits } from './bengali';
+import { feetInchesToFeet, sqFtToTraditionalUnits, toBnAngul, toBnConverterNum, toBnNum, TraditionalUnits } from './bengali';
 
 /**
  * Core Constants from https://rahatshari.github.io/calculator-old-model/
@@ -743,3 +743,118 @@ export function summarizeTimberCart(items: TimberItem[]): {
   }
   return { totalPieces, totalCft, roundCft, sawnCft, totalPrice };
 }
+
+/**
+ * [৫] 📏 একক পরিবর্তন (দৈর্ঘ্য একক ও বর্গ একক কনভার্টার)
+ */
+export type LengthUnitKey =
+  | 'ft'
+  | 'inch'
+  | 'meter'
+  | 'hat'
+  | 'gaj'
+  | 'link'
+  | 'mm'
+  | 'cm'
+  | 'km'
+  | 'mile';
+
+export type AreaUnitKey =
+  | 'sqft'
+  | 'shotok'
+  | 'acre'
+  | 'hectare'
+  | 'bigha'
+  | 'katha'
+  | 'ojutangsho'
+  | 'gonda'
+  | 'kora'
+  | 'kani'
+  | 'sqhat'
+  | 'sqgaj'
+  | 'sqmeter'
+  | 'sqlink';
+
+export interface ConverterUnitDef<K extends string> {
+  key: K;
+  label: string;
+  factorToBase: number;
+  minDec: number;
+}
+
+export interface ConvertedUnitItem<K extends string = string> {
+  key: K;
+  label: string;
+  value: number;
+  formatted: string;
+  isSource: boolean;
+}
+
+export const LENGTH_UNITS: readonly ConverterUnitDef<LengthUnitKey>[] = [
+  { key: 'ft', label: 'ফুট', factorToBase: 1.0, minDec: 2 },
+  { key: 'inch', label: 'ইঞ্চি', factorToBase: 1.0 / 12.0, minDec: 2 },
+  { key: 'meter', label: 'মিটার', factorToBase: 1.0 / 0.3048, minDec: 2 },
+  { key: 'hat', label: 'হাত', factorToBase: 1.5, minDec: 2 },
+  { key: 'gaj', label: 'গজ', factorToBase: 3.0, minDec: 2 },
+  { key: 'link', label: 'লিংক', factorToBase: 0.66, minDec: 2 },
+  { key: 'mm', label: 'মি.মিটার', factorToBase: 0.001 / 0.3048, minDec: 2 },
+  { key: 'cm', label: 'সে.মিটার', factorToBase: 0.01 / 0.3048, minDec: 2 },
+  { key: 'km', label: 'কিলোমিটার', factorToBase: 1000.0 / 0.3048, minDec: 4 },
+  { key: 'mile', label: 'মাইল', factorToBase: 5280.0, minDec: 4 },
+];
+
+export const AREA_UNITS: readonly ConverterUnitDef<AreaUnitKey>[] = [
+  { key: 'sqft', label: 'বর্গফুট', factorToBase: 1.0, minDec: 2 },
+  { key: 'shotok', label: 'শতক', factorToBase: 435.6, minDec: 2 },
+  { key: 'acre', label: 'একর', factorToBase: 43560.0, minDec: 4 },
+  { key: 'hectare', label: 'হেক্টর', factorToBase: 10000.0 / (0.3048 * 0.3048), minDec: 5 },
+  { key: 'bigha', label: 'বিঘা', factorToBase: 14400.0, minDec: 2 },
+  { key: 'katha', label: 'কাঠা', factorToBase: 720.0, minDec: 2 },
+  { key: 'ojutangsho', label: 'অযুতাংশ', factorToBase: 4.356, minDec: 2 },
+  { key: 'gonda', label: 'গণ্ডা', factorToBase: 871.2, minDec: 2 },
+  { key: 'kora', label: 'কড়া', factorToBase: 217.8, minDec: 2 },
+  { key: 'kani', label: 'কানি', factorToBase: 17424.0, minDec: 2 },
+  { key: 'sqhat', label: 'বর্গহাত', factorToBase: 2.25, minDec: 2 },
+  { key: 'sqgaj', label: 'বর্গগজ', factorToBase: 9.0, minDec: 2 },
+  { key: 'sqmeter', label: 'বর্গমিটার', factorToBase: 1.0 / (0.3048 * 0.3048), minDec: 2 },
+  { key: 'sqlink', label: 'বর্গলিংক', factorToBase: 0.4356, minDec: 2 },
+];
+
+export function convertLengthUnits(
+  amount: number,
+  fromKey: LengthUnitKey
+): ConvertedUnitItem<LengthUnitKey>[] {
+  const safe = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+  const source = LENGTH_UNITS.find((u) => u.key === fromKey) ?? LENGTH_UNITS[0];
+  const inFt = safe * source.factorToBase;
+  return LENGTH_UNITS.map((u) => {
+    const value = inFt / u.factorToBase;
+    return {
+      key: u.key,
+      label: u.label,
+      value,
+      formatted: toBnConverterNum(value, u.minDec),
+      isSource: u.key === source.key,
+    };
+  });
+}
+
+export function convertAreaUnits(
+  amount: number,
+  fromKey: AreaUnitKey
+): ConvertedUnitItem<AreaUnitKey>[] {
+  const safe = Number.isFinite(amount) ? Math.max(0, amount) : 0;
+  const source = AREA_UNITS.find((u) => u.key === fromKey) ?? AREA_UNITS[0];
+  const inSqFt = safe * source.factorToBase;
+  return AREA_UNITS.map((u) => {
+    const value = inSqFt / u.factorToBase;
+    return {
+      key: u.key,
+      label: u.label,
+      value,
+      formatted: toBnConverterNum(value, u.minDec),
+      isSource: u.key === source.key,
+    };
+  });
+}
+

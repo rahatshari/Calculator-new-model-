@@ -58,6 +58,35 @@ public final class BnFormat {
         return toBnDigits(s);
     }
 
+    public static String toBnConverterNum(double val, int minDec) {
+        if (Double.isNaN(val) || Double.isInfinite(val) || Math.abs(val) < 1e-12) {
+            return toBnDigits(String.format(Locale.US, "%." + Math.max(0, minDec) + "f", 0.0));
+        }
+        double abs = Math.abs(val);
+        int maxDec;
+        if (abs < 0.0001) {
+            maxDec = 7;
+        } else if (abs < 100.0) {
+            maxDec = Math.max(minDec, 4);
+        } else {
+            maxDec = Math.max(minDec, 3);
+        }
+        String raw = String.format(Locale.US, "%." + maxDec + "f", val);
+        // Trim trailing zeros beyond minDec while keeping at least minDec decimal places
+        int dot = raw.indexOf('.');
+        if (dot >= 0) {
+            int keepEnd = raw.length();
+            while (keepEnd - 1 > dot + minDec && raw.charAt(keepEnd - 1) == '0') {
+                keepEnd--;
+            }
+            if (keepEnd - 1 == dot && minDec == 0) {
+                keepEnd--;
+            }
+            raw = raw.substring(0, keepEnd);
+        }
+        return toBnDigits(raw);
+    }
+
     public static double parseBnNum(String raw) {
         if (raw == null) return 0.0;
         StringBuilder en = new StringBuilder();

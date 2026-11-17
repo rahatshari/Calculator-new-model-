@@ -455,4 +455,91 @@ public final class Calculators {
         }
         return sum;
     }
+
+    // [৫] 📏 একক পরিবর্তন (দৈর্ঘ্য একক ও বর্গ একক)
+    public enum LengthUnit {
+        ft("ফুট", 1.0, 2),
+        inch("ইঞ্চি", 1.0 / 12.0, 2),
+        meter("মিটার", 1.0 / 0.3048, 2),
+        hat("হাত", 1.5, 2),
+        gaj("গজ", 3.0, 2),
+        link("লিংক", 0.66, 2),
+        mm("মি.মিটার", 0.001 / 0.3048, 2),
+        cm("সে.মিটার", 0.01 / 0.3048, 2),
+        km("কিলোমিটার", 1000.0 / 0.3048, 4),
+        mile("মাইল", 5280.0, 4);
+
+        public final String label;
+        public final double factorToFt;
+        public final int minDec;
+
+        LengthUnit(String label, double factorToFt, int minDec) {
+            this.label = label;
+            this.factorToFt = factorToFt;
+            this.minDec = minDec;
+        }
+    }
+
+    public enum AreaUnit {
+        sqft("বর্গফুট", 1.0, 2),
+        shotok("শতক", 435.6, 2),
+        acre("একর", 43560.0, 4),
+        hectare("হেক্টর", 10000.0 / (0.3048 * 0.3048), 5),
+        bigha("বিঘা", 14400.0, 2),
+        katha("কাঠা", 720.0, 2),
+        ojutangsho("অযুতাংশ", 4.356, 2),
+        gonda("গণ্ডা", 871.2, 2),
+        kora("কড়া", 217.8, 2),
+        kani("কানি", 17424.0, 2),
+        sqhat("বর্গহাত", 2.25, 2),
+        sqgaj("বর্গগজ", 9.0, 2),
+        sqmeter("বর্গমিটার", 1.0 / (0.3048 * 0.3048), 2),
+        sqlink("বর্গলিংক", 0.4356, 2);
+
+        public final String label;
+        public final double factorToSqFt;
+        public final int minDec;
+
+        AreaUnit(String label, double factorToSqFt, int minDec) {
+            this.label = label;
+            this.factorToSqFt = factorToSqFt;
+            this.minDec = minDec;
+        }
+    }
+
+    public static class ConvertedItem {
+        public final String label;
+        public final double value;
+        public final String formatted;
+        public final boolean isSource;
+
+        public ConvertedItem(String label, double value, String formatted, boolean isSource) {
+            this.label = label;
+            this.value = value;
+            this.formatted = formatted;
+            this.isSource = isSource;
+        }
+    }
+
+    public static java.util.List<ConvertedItem> convertLength(double amount, LengthUnit from) {
+        double safe = Math.max(0.0, amount);
+        double inFt = safe * from.factorToFt;
+        java.util.List<ConvertedItem> out = new java.util.ArrayList<>();
+        for (LengthUnit u : LengthUnit.values()) {
+            double v = inFt / u.factorToFt;
+            out.add(new ConvertedItem(u.label, v, BnFormat.toBnConverterNum(v, u.minDec), u == from));
+        }
+        return out;
+    }
+
+    public static java.util.List<ConvertedItem> convertArea(double amount, AreaUnit from) {
+        double safe = Math.max(0.0, amount);
+        double inSqFt = safe * from.factorToSqFt;
+        java.util.List<ConvertedItem> out = new java.util.ArrayList<>();
+        for (AreaUnit u : AreaUnit.values()) {
+            double v = inSqFt / u.factorToSqFt;
+            out.add(new ConvertedItem(u.label, v, BnFormat.toBnConverterNum(v, u.minDec), u == from));
+        }
+        return out;
+    }
 }

@@ -42,6 +42,38 @@ export function toBnAngul(val: number | string | undefined | null): string {
   return toBnNum(rounded.toFixed(1).replace(/\.0$/, ''));
 }
 
+/**
+ * একক পরিবর্তনের জন্য নিখুঁত দশমিক ফরম্যাটিং:
+ * মান শূন্য হলে ন্যূনতম দশমিকসহ (যেমন ০.০০) দেখাবে এবং ক্ষুদ্র মানের ক্ষেত্রে প্রয়োজনীয় অঙ্ক রাখবে।
+ */
+export function toBnConverterNum(val: number, minDec = 2): string {
+  if (!Number.isFinite(val) || Math.abs(val) < 1e-12) {
+    return toBnNum(0, Math.max(0, minDec));
+  }
+  const abs = Math.abs(val);
+  let maxDec: number;
+  if (abs < 0.0001) {
+    maxDec = 7;
+  } else if (abs < 100) {
+    maxDec = Math.max(minDec, 4);
+  } else {
+    maxDec = Math.max(minDec, 3);
+  }
+  let raw = val.toFixed(maxDec);
+  const dot = raw.indexOf('.');
+  if (dot >= 0) {
+    let keepEnd = raw.length;
+    while (keepEnd - 1 > dot + minDec && raw[keepEnd - 1] === '0') {
+      keepEnd--;
+    }
+    if (keepEnd - 1 === dot && minDec === 0) {
+      keepEnd--;
+    }
+    raw = raw.slice(0, keepEnd);
+  }
+  return toBnNum(raw);
+}
+
 
 /**
  * Parses a string containing either English (0-9) or Bengali (০-৯) digits into a standard JS number.

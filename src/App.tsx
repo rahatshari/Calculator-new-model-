@@ -44,6 +44,9 @@ const SoilCalculatorView = lazy(() =>
 const TimberCalculatorView = lazy(() =>
   import('./components/TimberCalculatorView').then((m) => ({ default: m.TimberCalculatorView }))
 );
+const UnitConverterView = lazy(() =>
+  import('./components/UnitConverterView').then((m) => ({ default: m.UnitConverterView }))
+);
 const HistoryView = lazy(() =>
   import('./components/HistoryView').then((m) => ({ default: m.HistoryView }))
 );
@@ -54,7 +57,7 @@ const PrintSheet = lazy(() =>
   import('./components/PrintSheet').then((m) => ({ default: m.PrintSheet }))
 );
 
-type ScreenView = 'home' | 'land' | 'nol' | 'soil' | 'timber' | 'history';
+type ScreenView = 'home' | 'land' | 'nol' | 'soil' | 'timber' | 'converter' | 'history';
 
 declare global {
   interface Window {
@@ -309,6 +312,7 @@ export default function App() {
       void import('./components/NolCalculatorView');
       void import('./components/SoilCalculatorView');
       void import('./components/TimberCalculatorView');
+      void import('./components/UnitConverterView');
     }, 150);
     return () => window.clearTimeout(timer);
   }, []);
@@ -431,6 +435,17 @@ export default function App() {
       ),
       accentBg: 'bg-[#ffdcc3]',
       accentText: 'text-[#2e1500]',
+    },
+    {
+      id: 'converter',
+      title: 'একক পরিবর্তন',
+      visual: (
+        <span role="img" aria-hidden="true">
+          📏
+        </span>
+      ),
+      accentBg: 'bg-[#ccfbf1]',
+      accentText: 'text-[#115e59]',
     },
   ];
 
@@ -588,6 +603,15 @@ export default function App() {
 
             {currentView === 'timber' && (
               <TimberCalculatorView
+                onBack={handleBackToHome}
+                onSaveHistory={handleSaveHistory}
+                onPrint={handleTriggerPrint}
+                onNotify={showToast}
+              />
+            )}
+
+            {currentView === 'converter' && (
+              <UnitConverterView
                 onBack={handleBackToHome}
                 onSaveHistory={handleSaveHistory}
                 onPrint={handleTriggerPrint}
