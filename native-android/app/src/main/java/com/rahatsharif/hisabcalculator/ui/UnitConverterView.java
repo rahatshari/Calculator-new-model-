@@ -1,6 +1,5 @@
 package com.rahatsharif.hisabcalculator.ui;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -84,7 +83,7 @@ public class UnitConverterView {
             root.addView(noteCard, BnUi.marginTop(ctx, 10));
         }
 
-        View seg = BnUi.makeSegmentedBar(ctx, p, new String[]{"দৈর্ঘ্য একক", "বর্গ একক"}, activeTab, idx -> {
+        View seg = BnUi.makeSegmentedBar(ctx, p, new String[]{"📏 দৈর্ঘ্য একক", "⊞ বর্গ একক"}, activeTab, false, idx -> {
             activeTab = idx;
             render();
         });
@@ -152,7 +151,7 @@ public class UnitConverterView {
         );
         ulp.topMargin = ThemeManager.dp(ctx, 3);
         unitBox.addView(activeUnitLabelView, ulp);
-        unitBox.setOnClickListener(v -> showUnitPickerDialog(ctx));
+        unitBox.setOnClickListener(v -> showUnitPickerDialog(ctx, p, unitBox));
 
         inputRow.addView(unitBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
         inputCard.addView(inputRow, BnUi.marginTop(ctx, 8));
@@ -188,35 +187,37 @@ public class UnitConverterView {
         ThemeManager.applyFontRecursively(root, ctx, host.getActiveFontId());
     }
 
-    private void showUnitPickerDialog(Context ctx) {
+    private void showUnitPickerDialog(Context ctx, Palette p, View anchor) {
         if (activeTab == 0) {
             LengthUnit[] units = LengthUnit.values();
             String[] labels = new String[units.length];
-            for (int i = 0; i < units.length; i++) labels[i] = units[i].label;
-            new AlertDialog.Builder(ctx)
-                .setTitle("দৈর্ঘ্য একক নির্বাচন করুন")
-                .setItems(labels, (d, which) -> {
-                    selectedLengthUnit = units[which];
-                    if (activeUnitLabelView != null) {
-                        activeUnitLabelView.setText(selectedLengthUnit.label + " ▾");
-                    }
-                    updateResultsOnly();
-                })
-                .show();
+            int sel = 0;
+            for (int i = 0; i < units.length; i++) {
+                labels[i] = units[i].label;
+                if (units[i] == selectedLengthUnit) sel = i;
+            }
+            BnUi.showAnchoredDropdown(ctx, p, host.getActiveFontId(), anchor, labels, sel, which -> {
+                selectedLengthUnit = units[which];
+                if (activeUnitLabelView != null) {
+                    activeUnitLabelView.setText(selectedLengthUnit.label + " ▾");
+                }
+                updateResultsOnly();
+            });
         } else {
             AreaUnit[] units = AreaUnit.values();
             String[] labels = new String[units.length];
-            for (int i = 0; i < units.length; i++) labels[i] = units[i].label;
-            new AlertDialog.Builder(ctx)
-                .setTitle("বর্গ একক নির্বাচন করুন")
-                .setItems(labels, (d, which) -> {
-                    selectedAreaUnit = units[which];
-                    if (activeUnitLabelView != null) {
-                        activeUnitLabelView.setText(selectedAreaUnit.label + " ▾");
-                    }
-                    updateResultsOnly();
-                })
-                .show();
+            int sel = 0;
+            for (int i = 0; i < units.length; i++) {
+                labels[i] = units[i].label;
+                if (units[i] == selectedAreaUnit) sel = i;
+            }
+            BnUi.showAnchoredDropdown(ctx, p, host.getActiveFontId(), anchor, labels, sel, which -> {
+                selectedAreaUnit = units[which];
+                if (activeUnitLabelView != null) {
+                    activeUnitLabelView.setText(selectedAreaUnit.label + " ▾");
+                }
+                updateResultsOnly();
+            });
         }
     }
 
@@ -257,11 +258,13 @@ public class UnitConverterView {
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
 
-            int bg = item.isSource ? p.softBlueBg : p.bgSecondary;
+            int bg = item.isSource
+                ? (p.isDark ? p.softBlueBg : Color.parseColor("#EEF4FF"))
+                : p.bgSecondary;
             int border = item.isSource
-                ? (p.isDark ? Color.parseColor("#38BDF8") : Color.parseColor("#123E6D"))
+                ? (p.isDark ? Color.parseColor("#38BDF8") : Color.parseColor("#6E88A6"))
                 : p.borderCard;
-            row.setBackground(ThemeManager.roundRect(ctx, bg, 14, border, item.isSource ? 1.5f : 1f));
+            row.setBackground(ThemeManager.roundRect(ctx, bg, 16, border, item.isSource ? 1.2f : 1f));
             row.setPadding(ThemeManager.dp(ctx, 14), ThemeManager.dp(ctx, 10), ThemeManager.dp(ctx, 14), ThemeManager.dp(ctx, 10));
 
             TextView valTv = new TextView(ctx);

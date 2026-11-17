@@ -3,16 +3,21 @@ package com.rahatsharif.hisabcalculator.ui;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.DigitsKeyListener;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.rahatsharif.hisabcalculator.util.BnFormat;
@@ -404,6 +409,12 @@ public final class BnUi {
     }
 
     public static LinearLayout makeSegmentedBar(Context ctx, Palette p, String[] labels, int activeIdx, OnTabSelected listener) {
+        return makeSegmentedBar(ctx, p, labels, activeIdx, true, listener);
+    }
+
+    public static LinearLayout makeSegmentedBar(
+        Context ctx, Palette p, String[] labels, int activeIdx, boolean showCheck, OnTabSelected listener
+    ) {
         LinearLayout bar = new LinearLayout(ctx);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setBackground(ThemeManager.roundRect(ctx, p.segmentBg, 999, p.borderCard, 1));
@@ -415,7 +426,7 @@ public final class BnUi {
             final int idx = i;
             TextView tv = new TextView(ctx);
             boolean active = (i == activeIdx);
-            tv.setText(active ? "✓ " + labels[i] : labels[i]);
+            tv.setText((active && showCheck) ? "✓ " + labels[i] : labels[i]);
             tv.setTextSize(12);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setGravity(Gravity.CENTER);
@@ -428,6 +439,112 @@ public final class BnUi {
             bar.addView(tv, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         }
         return bar;
+    }
+
+    /**
+     * AI Studio (Web)-এর মতো অ্যাংকরড ফ্লোটিং ড্রপডাউন মেনু (বড় সিস্টেম AlertDialog-এর বদলে)
+     */
+    public static void showAnchoredDropdown(
+        Context ctx,
+        Palette p,
+        String fontId,
+        View anchor,
+        String[] labels,
+        int selectedIdx,
+        OnTabSelected onPick
+    ) {
+        if (labels == null || labels.length == 0 || anchor == null) return;
+
+        int minWidth = ThemeManager.dp(ctx, 195);
+        int maxAllowedWidth = Math.max(minWidth, ctx.getResources().getDisplayMetrics().widthPixels - ThemeManager.dp(ctx, 28));
+        int anchorW = anchor.getWidth();
+        int popupWidth = Math.min(maxAllowedWidth, Math.max(anchorW, minWidth));
+
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(ThemeManager.roundRect(ctx, p.bgCard, 22, p.borderCard, 1));
+        int cardPad = ThemeManager.dp(ctx, 6);
+        card.setPadding(cardPad, cardPad, cardPad, cardPad);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            card.setElevation(ThemeManager.dp(ctx, 10));
+        }
+
+        ScrollView scroll = new ScrollView(ctx);
+        scroll.setVerticalScrollBarEnabled(false);
+
+        LinearLayout list = new LinearLayout(ctx);
+        list.setOrientation(LinearLayout.VERTICAL);
+        scroll.addView(list, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        int heightLimit = labels.length > 7
+            ? ThemeManager.dp(ctx, 290)
+            : ViewGroup.LayoutParams.WRAP_CONTENT;
+        card.addView(scroll, new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, heightLimit
+        ));
+
+        final PopupWindow popup = new PopupWindow(
+            card,
+            popupWidth,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        );
+        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        popup.setOutsideTouchable(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            popup.setElevation(ThemeManager.dp(ctx, 10));
+        }
+
+        for (int i = 0; i < labels.length; i++) {
+            final int idx = i;
+            boolean active = (i == selectedIdx);
+
+            LinearLayout row = new LinearLayout(ctx);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(ThemeManager.dp(ctx, 12), ThemeManager.dp(ctx, 9), ThemeManager.dp(ctx, 12), ThemeManager.dp(ctx, 9));
+            if (active) {
+                row.setBackground(ThemeManager.roundRect(ctx, Color.parseColor("#123E6D"), 16, 0, 0));
+            }
+
+            TextView tv = new TextView(ctx);
+            tv.setText(labels[i]);
+            tv.setTextSize(13);
+            tv.setTypeface(null, Typeface.BOLD);
+            tv.setTextColor(active ? Color.WHITE : p.textPrimary);
+            row.addView(tv, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+            if (active) {
+                TextView chk = new TextView(ctx);
+                chk.setText("✓");
+                chk.setTextSize(13.5f);
+                chk.setTypeface(null, Typeface.BOLD);
+                chk.setTextColor(Color.WHITE);
+                LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                );
+                clp.leftMargin = ThemeManager.dp(ctx, 8);
+                row.addView(chk, clp);
+            }
+
+            row.setOnClickListener(v -> {
+                popup.dismiss();
+                if (onPick != null) onPick.onSelect(idx);
+            });
+
+            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            if (i > 0) rlp.topMargin = ThemeManager.dp(ctx, 3);
+            list.addView(row, rlp);
+        }
+
+        ThemeManager.applyFontRecursively(card, ctx, fontId);
+
+        int xOff = anchorW > 0 ? (anchorW - popupWidth) : 0;
+        popup.showAsDropDown(anchor, xOff, ThemeManager.dp(ctx, 6));
     }
 
     public static LinearLayout makeResetAndSubmitRow(

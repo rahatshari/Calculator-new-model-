@@ -1,6 +1,5 @@
 package com.rahatsharif.hisabcalculator.ui;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -309,7 +308,7 @@ public class LandCalculatorView {
         LinearLayout.LayoutParams ulp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         ulp.topMargin = ThemeManager.dp(ctx, 4);
         unitBox.addView(uVal, ulp);
-        unitBox.setOnClickListener(v -> showUnitPicker(ctx, uVal));
+        unitBox.setOnClickListener(v -> showUnitPicker(ctx, p, unitBox, uVal));
         row.addView(unitBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
         form.addView(row, BnUi.marginTop(ctx, 8));
 
@@ -377,17 +376,18 @@ public class LandCalculatorView {
         root.addView(form, BnUi.marginTop(ctx, 10));
     }
 
-    private void showUnitPicker(Context ctx, TextView uVal) {
+    private void showUnitPicker(Context ctx, Palette p, View anchor, TextView uVal) {
         LandUnitType[] units = LandUnitType.values();
         String[] labels = new String[units.length];
-        for (int i = 0; i < units.length; i++) labels[i] = units[i].label;
-        new AlertDialog.Builder(ctx)
-            .setTitle("জমির একক নির্বাচন করুন")
-            .setItems(labels, (d, which) -> {
-                targetUnit = units[which];
-                uVal.setText(targetUnit.label + " ▾");
-            })
-            .show();
+        int sel = 0;
+        for (int i = 0; i < units.length; i++) {
+            labels[i] = units[i].label;
+            if (units[i] == targetUnit) sel = i;
+        }
+        BnUi.showAnchoredDropdown(ctx, p, host.getActiveFontId(), anchor, labels, sel, which -> {
+            targetUnit = units[which];
+            uVal.setText(targetUnit.label + " ▾");
+        });
     }
 
     private List<DetailItem> buildDetailsList(LandResult res) {

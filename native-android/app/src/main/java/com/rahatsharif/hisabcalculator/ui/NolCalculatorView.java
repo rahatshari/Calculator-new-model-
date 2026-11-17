@@ -1,6 +1,5 @@
 package com.rahatsharif.hisabcalculator.ui;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -173,13 +172,12 @@ public class NolCalculatorView {
         pickBtn.setTextColor(p.softBlueText);
         pickBtn.setBackground(ThemeManager.roundRect(ctx, p.softBlueBg, 999, 0, 0));
         pickBtn.setPadding(ThemeManager.dp(ctx, 12), ThemeManager.dp(ctx, 8), ThemeManager.dp(ctx, 12), ThemeManager.dp(ctx, 8));
-        pickBtn.setOnClickListener(v -> new AlertDialog.Builder(ctx)
-            .setTitle("নলের মাপ নির্বাচন করুন")
-            .setItems(NOL_LABELS, (d, which) -> {
+        pickBtn.setOnClickListener(v -> BnUi.showAnchoredDropdown(
+            ctx, p, host.getActiveFontId(), pickBtn, NOL_LABELS, nolOptionIdx, which -> {
                 nolOptionIdx = which;
                 render();
-            })
-            .show());
+            }
+        ));
         nolBar.addView(pickBtn);
         root.addView(nolBar, BnUi.marginTop(ctx, 10));
 
@@ -348,13 +346,15 @@ public class NolCalculatorView {
         unitBox.setOnClickListener(v -> {
             LandUnitType[] units = LandUnitType.values();
             String[] labels = new String[units.length];
-            for (int i = 0; i < units.length; i++) labels[i] = units[i].label;
-            new AlertDialog.Builder(ctx)
-                .setTitle("জমির একক নির্বাচন করুন")
-                .setItems(labels, (d, which) -> {
-                    targetUnit = units[which];
-                    uVal.setText(targetUnit.label + " ▾");
-                }).show();
+            int sel = 0;
+            for (int i = 0; i < units.length; i++) {
+                labels[i] = units[i].label;
+                if (units[i] == targetUnit) sel = i;
+            }
+            BnUi.showAnchoredDropdown(ctx, p, host.getActiveFontId(), unitBox, labels, sel, which -> {
+                targetUnit = units[which];
+                uVal.setText(targetUnit.label + " ▾");
+            });
         });
         row.addView(unitBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f));
         form.addView(row);
